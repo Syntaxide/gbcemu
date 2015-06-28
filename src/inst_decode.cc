@@ -39,6 +39,12 @@ struct Instruction {
     OP_LDNA,
     OP_LDANN,
     OP_LDNNA,
+    OP_LDAHLI,
+    OP_LDAHLD,
+    OP_LDBCA,
+    OP_LDDEA,
+    OP_LDHLIA,
+    OP_LDHLDA,
   } operation;
   uint8_t op1, op2;
   uint8_t immediate;
@@ -47,30 +53,66 @@ struct Instruction {
 };
 
 void decode_instruction(unsigned char *rom, Instruction *decoded) {
-  uint8_t instr = select_bits(*rom, 7, 6);
-  uint8_t op1 = select_bits(*rom, 5, 3);
-  uint8_t op2 = select_bits(*rom, 2, 0);
-  printf("i=%d\top1=%d\top2=%d\n", instr, op1, op2);
   memset(decoded, 0, sizeof(Instruction));
+  uint8_t instr = select_bits(*rom, 7, 6);
+  uint8_t op1 = decoded->op1 = select_bits(*rom, 5, 3);
+  uint8_t op2 = decoded->op2 = select_bits(*rom, 2, 0);
+  decoded->immediate = rom[1];
+  decoded->immediate2 = rom[2];
+  decoded->bytes_used = 1;
+  printf("i=%d\top1=%d\top2=%d\n", instr, decoded->op1, decoded->op2);
   switch(instr) {
   case 0:
     if(op1 == REG_6 && op2 == REG_6) {
-      puts("LD (HL) N");
+      decoded->operation = Instruction::OP_LDHLN;
+      decoded->bytes_used = 2;
     } else if(op2 == REG_6){
-      puts("LD R N");
+      decoded->operation = Instruction::OP_LDRN;
+      decoded->bytes_used = 2;
     } else if(op1 == REG_a && op2 == REG_2) {
-      puts("LD A (BC)");
+      decoded->operation = Instruction::OP_LDABC;
     } else if(op1 == 3 && op2 == REG_2) {
-      puts("LD A, (DE)");
+      decoded->operation = Instruction::OP_LDADE;
+    } else if(*rom == 0b00101010) {
+      decoded->operation = Instruction::OP_LDAHLI;
+    } else if(*rom == 0b00111010) {
+      decoded->operation = Instruction::OP_LDAHLD;
+    } else if(*rom == 0b00000010) {
+      decoded->operation = Instruction::OP_LDBCA;
+    } else if(*rom == 0b00010010) {
+      decoded->operation = Instruction::OP_LDDEA;
+    } else if(*rom == 0b00100010) {
+      decoded->operation = Instruction::OP_LDHLIA;
+    } else if(*rom == 0b00110010) {
+      decoded->operation = Instruction::OP_LDHLDA;
     }
     break;
   case 1:
     if(op1 == REG_6) {
-      puts("LD (HL) R");
+      decoded->operation = Instruction::OP_LDHLR;
     } else if(op2 == REG_6)
-      puts("LD R (HL)");
+      decoded->operation = Instruction::OP_LDRHL;
     else {
-      puts("LD R R");
+      decoded->operation = Instruction::OP_LDRR;
+    }
+    break;
+  case 3:
+    if(*rom == 0b11110010) {
+      decoded->operation = Instruction::OP_LDAC;
+    } else if(*rom == 0b11100010) {
+      decoded->operation = Instruction::OP_LDCA;
+    } else if(*rom == 0b11110000) {
+      decoded->operation = Instruction::OP_LDAN;
+      decoded->bytes_used = 2;
+    } else if(*rom == 0b11100000) {
+      decoded->operation = Instruction::OP_LDNA;
+      decoded->bytes_used = 2;
+    } else if(*rom == 0b11111010) {
+      decoded->operation = Instruction::OP_LDANN;
+      decoded->bytes_used = 3;
+    } else if(*rom == 0b11101010) {
+      decoded->operation = Instruction::OP_LDNNA;
+      decoded->bytes_used = 3;
     }
     break;
   default:

@@ -32,7 +32,7 @@ void test_ld_decode() {
   rom[0] = 0b01111000;
   decode_instruction(rom, &instruction);
   TEST_EQ(instruction.operation, Instruction::OP_LDRR);
-  TEST_EQ(instruction.op1, 3);
+  TEST_EQ(instruction.op1, 7);
   TEST_EQ(instruction.op2, 0);
   TEST_EQ(instruction.bytes_used, 1);
 
@@ -41,7 +41,7 @@ void test_ld_decode() {
   rom[2] = 238;
   decode_instruction(rom, &instruction);
   TEST_EQ(instruction.operation, Instruction::OP_LDRN);
-  TEST_EQ(instruction.op1, 3);
+  TEST_EQ(instruction.op1, 7);
   TEST_EQ(instruction.immediate, 238);
   TEST_EQ(instruction.bytes_used, 2);
 
@@ -126,6 +126,18 @@ void test_ld_decode() {
   TEST_EQ(instruction.immediate, 123);
   TEST_EQ(instruction.immediate2, 231);
   TEST_EQ(instruction.bytes_used, 3);
+
+  // LD (HLI), A
+  rom[0] = 0b00100010;
+  decode_instruction(rom, &instruction);
+  TEST_EQ(instruction.operation, Instruction::OP_LDHLIA);
+  TEST_EQ(instruction.bytes_used, 1);
+
+  // LD  (HLD), A
+  rom[0] = 0b00110010;
+  decode_instruction(rom, &instruction);
+  TEST_EQ(instruction.operation, Instruction::OP_LDHLDA);
+  TEST_EQ(instruction.bytes_used, 1)
 
 }
 
