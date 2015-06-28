@@ -33,10 +33,16 @@ struct Instruction {
     OP_LDHLN,
     OP_LDABC,
     OP_LDADE,
-    OP_LDAC
+    OP_LDAC,
+    OP_LDCA,
+    OP_LDAN,
+    OP_LDNA,
+    OP_LDANN,
+    OP_LDNNA,
   } operation;
   uint8_t op1, op2;
   uint8_t immediate;
+  uint8_t immediate2;
   uint8_t bytes_used;
 };
 
@@ -52,7 +58,6 @@ void decode_instruction(unsigned char *rom, Instruction *decoded) {
       puts("LD (HL) N");
     } else if(op2 == REG_6){
       puts("LD R N");
-      rom++;
     } else if(op1 == REG_a && op2 == REG_2) {
       puts("LD A (BC)");
     } else if(op1 == 3 && op2 == REG_2) {
