@@ -69,9 +69,9 @@ void decode_instruction(unsigned char *rom, Instruction *decoded) {
     } else if(op2 == REG_6){
       decoded->operation = Instruction::OP_LDRN;
       decoded->bytes_used = 2;
-    } else if(op1 == REG_a && op2 == REG_2) {
+    } else if(*rom == 0b00001010) {
       decoded->operation = Instruction::OP_LDABC;
-    } else if(op1 == 3 && op2 == REG_2) {
+    } else if(*rom == 0b00011010) {
       decoded->operation = Instruction::OP_LDADE;
     } else if(*rom == 0b00101010) {
       decoded->operation = Instruction::OP_LDAHLI;

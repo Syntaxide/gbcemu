@@ -38,7 +38,7 @@ void test_ld_decode() {
 
   // LD R(a), N
   rom[0] = 0b00111110;
-  rom[2] = 238;
+  rom[1] = 238;
   decode_instruction(rom, &instruction);
   TEST_EQ(instruction.operation, Instruction::OP_LDRN);
   TEST_EQ(instruction.op1, 7);
@@ -56,7 +56,7 @@ void test_ld_decode() {
   rom[0] = 0b01110001;
   decode_instruction(rom, &instruction);
   TEST_EQ(instruction.operation, Instruction::OP_LDHLR);
-  TEST_EQ(instruction.op1, 1);
+  TEST_EQ(instruction.op2, 1);
   TEST_EQ(instruction.bytes_used, 1);
 
   // LD (HL), N(238)
@@ -96,8 +96,8 @@ void test_ld_decode() {
   rom[1] = 128;
   decode_instruction(rom, &instruction);
   TEST_EQ(instruction.operation, Instruction::OP_LDAN);
-  TEST_EQ(instruction.immediate, 138);
-  TEST_EQ(instruction.bytes_used, 1);
+  TEST_EQ(instruction.immediate, 128);
+  TEST_EQ(instruction.bytes_used, 2);
 
   // LD (N), A
   rom[0] = 0b11100000;
