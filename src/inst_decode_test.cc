@@ -29,6 +29,7 @@ void check_instr(uint8_t rom1, Instruction::Operation op, char bytes_expected, i
   rom[0] = rom1;
   rom[1] = 123;
   rom[2] = 213;
+  printf("checking operation %s\n", OperationStrings[op]);
   decode_instruction(rom, &instruction);
   TEST_EQ2(instruction.operation, op, line);
   TEST_EQ2(instruction.bytes_used, bytes_expected, line);
@@ -216,12 +217,12 @@ void test_instr_decode() {
   // SUB N
   check_instr(0b11010110,
               Instruction::OP_SUBN,
-              1,
+              2,
               __LINE__);
   // SUB HL
-  check_instr(0b11010110,
+  check_instr(0b10010110,
               Instruction::OP_SUBHL,
-              2,
+              1,
               __LINE__);
   // SBC A, R
   check_instr(0b10011001,
@@ -238,8 +239,13 @@ void test_instr_decode() {
               Instruction::OP_SBCAHL,
               1,
               __LINE__);
-  // AND R
+  //AND R
   check_instr(0b10100001,
+              Instruction::OP_ANDR,
+              1,
+              __LINE__);
+  // AND N
+  check_instr(0b11100110,
               Instruction::OP_ANDN,
               2,
               __LINE__);

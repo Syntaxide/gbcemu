@@ -24,84 +24,79 @@ uint8_t select_bits(uint8_t in, char start, char end) {
   return (in & ones) >> end;
 }
 
-struct Instruction {
-  enum Operation {
-    // 8 bit transfer / IO (p85)
-    OP_LDRR = 1,
-    OP_LDRN,
-    OP_LDRHL,
-    OP_LDHLR,
-    OP_LDHLN,
-    OP_LDABC,
-    OP_LDADE,
-    OP_LDAC,
-    OP_LDCA,
-    OP_LDAN,
-    OP_LDNA,
-    OP_LDANN,
-    OP_LDNNA,
-    OP_LDAHLI,
-    OP_LDAHLD,
-    OP_LDBCA,
-    OP_LDDEA,
-    OP_LDHLIA,
-    OP_LDHLDA,
+#define GEN_ENUM(OBJ) OBJ,
+#define GEN_STRING(OBJ) #OBJ,
+#define MAP_OPERATIONS(FUN) \
+  /* 8 bit transfer / IO (p85)*/               \
+  FUN(OP_LDRR)                                 \
+    FUN(OP_LDRN)                               \
+    FUN(OP_LDRHL)                              \
+    FUN(OP_LDHLR)                              \
+    FUN(OP_LDHLN)                              \
+    FUN(OP_LDABC)                              \
+    FUN(OP_LDADE)                              \
+    FUN(OP_LDAC)                               \
+    FUN(OP_LDCA)                               \
+    FUN(OP_LDAN)                               \
+    FUN(OP_LDNA)                               \
+    FUN(OP_LDANN)                              \
+    FUN(OP_LDNNA)                              \
+    FUN(OP_LDAHLI)                             \
+    FUN(OP_LDAHLD)                             \
+    FUN(OP_LDBCA)                              \
+    FUN(OP_LDDEA)                              \
+    FUN(OP_LDHLIA)                             \
+    FUN(OP_LDHLDA)                           \
+    /* 16 bit transfer (p90)*/               \
+    FUN(OP_LDDDNN)                        \
+    FUN(OP_LDSPHL)                        \
+    FUN(OP_PUSHQQ)                        \
+    FUN(OP_POPQQ)                         \
+    FUN(OP_LDHLSP)                        \
+    FUN(OP_LDNNSP)                         \
+    /* 8bit arith logical (p92)*/          \
+    FUN(OP_ADDAR)                          \
+    FUN(OP_ADDAN)                          \
+    FUN(OP_ADDAHL)                         \
+    FUN(OP_ADCAR)                          \
+    FUN(OP_ADCAN)                          \
+    FUN(OP_ADCAHL)                         \
+    FUN(OP_SUBR)                           \
+    FUN(OP_SUBN)                           \
+    FUN(OP_SUBHL)                          \
+    FUN(OP_SBCAR)                          \
+    FUN(OP_SBCAN)                          \
+    FUN(OP_SBCAHL)                         \
+    FUN(OP_ANDR)                           \
+    FUN(OP_ANDN)                           \
+    FUN(OP_ANDHL)                          \
+    FUN(OP_ORR)                            \
+    FUN(OP_ORN)                            \
+    FUN(OP_ORHL)                           \
+    FUN(OP_XORR)                           \
+    FUN(OP_XORN)                           \
+    FUN(OP_XORHL)                          \
+    FUN(OP_CPR)                            \
+    FUN(OP_CPN)                            \
+    FUN(OP_CPHL)                           \
+    FUN(OP_INCR)                           \
+    FUN(OP_INCHL)                          \
+    FUN(OP_DECR)                           \
+    FUN(OP_DECHL)
 
-    // 16 bit transfer (p90)
-    OP_LDDDNN,
-    OP_LDSPHL,
-    OP_PUSHQQ,
-    OP_POPQQ,
-    OP_LDHLSP,
-    OP_LDNNSP,
-
-    // 8bit arith, logical (p92)
-    OP_ADDAR,
-    OP_ADDAN,
-    OP_ADDAHL,
-
-    OP_ADCAR,
-    OP_ADCAN,
-    OP_ADCAHL,
-
-    OP_SUBR,
-    OP_SUBN,
-    OP_SUBHL,
-
-    OP_SBCAR,
-
-    OP_SBCAN,
-    OP_SBCAHL,
-
-    OP_ANDR,
-    OP_ANDN,
-    OP_ANDHL,
-
-    OP_ORR,
-    OP_ORN,
-    OP_ORHL,
-
-    OP_XORR,
-    OP_XORN,
-    OP_XORHL,
-
-    OP_CPR,
-    OP_CPN,
-    OP_CPHL,
-
-    OP_INCR,
-    OP_INCHL,
-
-    OP_DECR,
-    OP_DECHL,
-
-  } operation;
-  uint8_t op1, op2;
-  uint8_t immediate;
-  uint8_t immediate2;
-  uint8_t bytes_used;
+static const char *OperationStrings[] = {
+    MAP_OPERATIONS(GEN_STRING)
 };
 
+struct Instruction {
+    enum Operation {
+        MAP_OPERATIONS(GEN_ENUM)
+    } operation;
+    uint8_t op1, op2;\
+    uint8_t immediate;\
+    uint8_t immediate2;\
+    uint8_t bytes_used;\
+};
 
 bool is_reg(uint8_t code) {
   return (code < 8) && (code != 2) && (code != 6);
@@ -113,12 +108,12 @@ bool is_reg(uint8_t code) {
     decoded->bytes_used = len;                        \
   }
 #define INSTR_REGISTER_REG(first, two, label, len)      \
-  else if(instr == first && op2 == two && is_reg(op1)){               \
+  else if((instr == first) && (op2 == two) && is_reg(op1)){ \
   decoded->operation = label;                       \
   decoded->bytes_used = len;                        \
   }
 #define INSTR_REGISTER_REG2(first, one, label, len)                      \
-  else if(instr == first && op1 == one && is_reg(op2)){                 \
+  else if((instr == first) && (op1 == one) && is_reg(op2)){            \
     decoded->operation = label; \
     decoded->bytes_used = len; \
     }
@@ -161,15 +156,7 @@ void decode_instruction(unsigned char *rom, Instruction *decoded) {
     } else if(*rom == 0b00001000) {
       decoded->operation = Instruction::OP_LDNNSP;
       decoded->bytes_used = 3;
-    } else if(instr == 0 && op2 == 4) {
-      decoded->operation = Instruction::OP_INCR;
-    } else if(*rom == 0b00110100) {
-      decoded->operation = Instruction::OP_INCHL;
-    } else if(instr == 0 && op2 == 5) {
-      decoded->operation = Instruction::OP_DECR;
-    } else if(*rom == 0b00110101) {
-      decoded->operation = Instruction::OP_DECHL;
-    } else if(instr == 1 && op1 == REG_6 && is_reg(op2)) {
+    }  else if(instr == 1 && op1 == REG_6 && is_reg(op2)) {
       decoded->operation = Instruction::OP_LDHLR;
     } else if(instr == 1 && op2 == REG_6 && is_reg(op1)) {
       decoded->operation = Instruction::OP_LDRHL;
@@ -251,6 +238,7 @@ void decode_instruction(unsigned char *rom, Instruction *decoded) {
       decoded->bytes_used = 2;
     } else if(*rom == 0b11000110) {
       decoded->operation = Instruction::OP_ADDAN;
+      decoded->bytes_used = 2;
     } else if(*rom == 0b11001110) {
       decoded->operation = Instruction::OP_ADCAN;
       decoded->bytes_used = 2;
