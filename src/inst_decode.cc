@@ -55,7 +55,7 @@ struct Instruction {
     OP_LDHLSP,
     OP_LDNNSP,
 
-    // 8bit arith, logical
+    // 8bit arith, logical (p92)
     OP_ADDAR,
     OP_ADDAN,
     OP_ADDAHL,
@@ -69,13 +69,13 @@ struct Instruction {
     OP_SUBHL,
 
     OP_SBCAR,
+
     OP_SBCAN,
-    OP_SBCHL,
+    OP_SBCAHL,
 
     OP_ANDR,
     OP_ANDN,
     OP_ANDHL,
-
 
     OP_ORR,
     OP_ORN,
@@ -106,6 +106,24 @@ struct Instruction {
 bool is_reg(uint8_t code) {
   return (code < 8) && (code != 2) && (code != 6);
 }
+
+#define INSTR_REGISTER_DEF(binary, label, len)\
+  else if(*rom == binary) {                           \
+    decoded->operation = label;                       \
+    decoded->bytes_used = len;                        \
+  }
+#define INSTR_REGISTER_REG(first, two, label, len)      \
+  else if(instr == first && op2 == two && is_reg(op1)){               \
+  decoded->operation = label;                       \
+  decoded->bytes_used = len;                        \
+  }
+#define INSTR_REGISTER_REG2(first, one, label, len)                      \
+  else if(instr == first && op1 == one && is_reg(op2)){                 \
+    decoded->operation = label; \
+    decoded->bytes_used = len; \
+    }
+
+
 void decode_instruction(unsigned char *rom, Instruction *decoded) {
   memset(decoded, 0, sizeof(Instruction));
   uint8_t instr = select_bits(*rom, 7, 6);
@@ -115,12 +133,10 @@ void decode_instruction(unsigned char *rom, Instruction *decoded) {
   decoded->immediate2 = rom[2];
   decoded->bytes_used = 1;
   printf("i=%d\top1=%d\top2=%d\n", instr, decoded->op1, decoded->op2);
-  switch(instr) {
-  case 0:
     if(*rom == 0b00110110) {
       decoded->operation = Instruction::OP_LDHLN;
       decoded->bytes_used = 2;
-    } else if(op2 == REG_6 && is_reg(op1)){
+    } else if(instr == 0 &&op2 == REG_6 && is_reg(op1)){
       decoded->operation = Instruction::OP_LDRN;
       decoded->bytes_used = 2;
     } else if(*rom == 0b00001010) {
@@ -145,22 +161,49 @@ void decode_instruction(unsigned char *rom, Instruction *decoded) {
     } else if(*rom == 0b00001000) {
       decoded->operation = Instruction::OP_LDNNSP;
       decoded->bytes_used = 3;
-    } else {
-      puts("invalid 00 instruction");
-      exit(-1);
-    }
-    break;
-  case 1:
-    if(op1 == REG_6 && is_reg(op2)) {
+    } else if(instr == 0 && op2 == 4) {
+      decoded->operation = Instruction::OP_INCR;
+    } else if(*rom == 0b00110100) {
+      decoded->operation = Instruction::OP_INCHL;
+    } else if(instr == 0 && op2 == 5) {
+      decoded->operation = Instruction::OP_DECR;
+    } else if(*rom == 0b00110101) {
+      decoded->operation = Instruction::OP_DECHL;
+    } else if(instr == 1 && op1 == REG_6 && is_reg(op2)) {
       decoded->operation = Instruction::OP_LDHLR;
-    } else if(op2 == REG_6 && is_reg(op1)) {
+    } else if(instr == 1 && op2 == REG_6 && is_reg(op1)) {
       decoded->operation = Instruction::OP_LDRHL;
-    } else {
+    } else if(instr == 1 && is_reg(op1) && is_reg(op2)){
       decoded->operation = Instruction::OP_LDRR;
-    }
-    break;
-  case 3:
-    if(*rom == 0b11110010) {
+    } else if(instr == 2 && op1 == 2 && is_reg(op2)) {
+      decoded->operation = Instruction::OP_SUBR;
+    } else if(instr == 2 && op1 == 3 && is_reg(op2)) {
+      decoded->operation = Instruction::OP_SBCAR;
+    } else if(*rom == 0b10011110) {
+      decoded->operation = Instruction::OP_SBCAHL;
+    } else if(*rom == 0b10100110) {
+      decoded->operation = Instruction::OP_ANDHL;
+    } else if(instr == 2 && op1 == 6 && is_reg(op2)) {
+      decoded->operation = Instruction::OP_ORR;
+    } else if(*rom == 0b10110110) {
+      decoded->operation = Instruction::OP_ORHL;
+    } else if(instr == 2 && op1 == 5 && is_reg(op2)) {
+      decoded->operation = Instruction::OP_XORR;
+    } else if(*rom == 0b10101110) {
+      decoded->operation = Instruction::OP_XORHL;
+    } else if(instr == 2 && op1 == 7 && is_reg(op2)) {
+      decoded->operation = Instruction::OP_CPR;
+    } else if(*rom == 0b10111110) {
+      decoded->operation = Instruction::OP_CPHL;
+    } else if(instr == 2 && op1 == 0 && is_reg(op2)) {
+      decoded->operation = Instruction::OP_ADDAR;
+    } else if(instr == 2 && *rom == 0b10000110) {
+      decoded->operation = Instruction::OP_ADDAHL;
+    } else if(instr == 2 && op1 == 1 && is_reg(op2)) {
+      decoded->operation = Instruction::OP_ADCAR;
+    } else if(*rom == 0b10001110) {
+      decoded->operation = Instruction::OP_ADCAHL;
+    } else if(*rom == 0b11110010) {
       decoded->operation = Instruction::OP_LDAC;
     } else if(*rom == 0b11100010) {
       decoded->operation = Instruction::OP_LDCA;
@@ -185,10 +228,60 @@ void decode_instruction(unsigned char *rom, Instruction *decoded) {
     } else if(*rom == 0b11111000) {
       decoded->operation = Instruction::OP_LDHLSP;
       decoded->bytes_used = 2;
+    } else if(*rom == 0b11010110) {
+      decoded->operation = Instruction::OP_SUBN;
+      decoded->bytes_used = 2;
+    } else if(*rom == 0b10010110) {
+      decoded->operation = Instruction::OP_SUBHL;
+      decoded->bytes_used = 1;
+    } else if(*rom == 0b11011110) {
+      decoded->operation = Instruction::OP_SBCAN;
+      decoded->bytes_used = 2;
+    } else if(*rom == 0b11100110) {
+      decoded->operation = Instruction::OP_ANDN;
+      decoded->bytes_used = 2;
+    } else if(*rom == 0b11110110) {
+      decoded->operation = Instruction::OP_ORN;
+      decoded->bytes_used = 2;
+    } else if(*rom == 0b11101110) {
+      decoded->operation = Instruction::OP_XORN;
+      decoded->bytes_used = 2;
+    } else if(*rom == 0b11111110) {
+      decoded->operation = Instruction::OP_CPN;
+      decoded->bytes_used = 2;
+    } else if(*rom == 0b11000110) {
+      decoded->operation = Instruction::OP_ADDAN;
+    } else if(*rom == 0b11001110) {
+      decoded->operation = Instruction::OP_ADCAN;
+      decoded->bytes_used = 2;
     }
-    break;
-  default:
-    puts("unable to decode instruction");
-    exit(-1);
-  }
+    INSTR_REGISTER_REG2(2, 0b10, Instruction::OP_SUBR, 1)
+    INSTR_REGISTER_DEF(0b11010110, Instruction::OP_SUBN, 2)
+    INSTR_REGISTER_DEF(0b10010110, Instruction::OP_SUBHL, 1)
+
+    INSTR_REGISTER_REG2(2, 0b011, Instruction::OP_SBCAR, 1)
+    INSTR_REGISTER_DEF(0b11011110, Instruction::OP_SBCAN, 2)
+    INSTR_REGISTER_DEF(0b10011110, Instruction::OP_SBCAHL, 1)
+
+    INSTR_REGISTER_REG2(2, 0b100, Instruction::OP_ANDR, 1)
+    INSTR_REGISTER_DEF(0b11100110, Instruction::OP_ANDN, 2)
+    INSTR_REGISTER_DEF(0b10100110, Instruction::OP_ANDHL, 1)
+
+    INSTR_REGISTER_REG2(2, 0b110, Instruction::OP_ORR, 1)
+    INSTR_REGISTER_DEF(0b11110110, Instruction::OP_ORN, 2)
+    INSTR_REGISTER_DEF(0b10110110, Instruction::OP_ORHL, 1)
+
+    INSTR_REGISTER_REG2(2, 0b101, Instruction::OP_XORR, 1)
+    INSTR_REGISTER_DEF(0b11101110, Instruction::OP_XORN, 2)
+    INSTR_REGISTER_DEF(0b10101110, Instruction::OP_XORHL, 1)
+
+    INSTR_REGISTER_REG2(2, 0b111, Instruction::OP_CPR, 1)
+    INSTR_REGISTER_DEF(0b11111110, Instruction::OP_CPN, 2)
+    INSTR_REGISTER_DEF(0b10111110, Instruction::OP_CPHL, 1)
+
+    INSTR_REGISTER_REG(0, 0b100, Instruction::OP_INCR, 1)
+    INSTR_REGISTER_DEF(0b00110100, Instruction::OP_INCHL, 1)
+
+    INSTR_REGISTER_REG(0, 0b101, Instruction::OP_DECR, 1)
+    INSTR_REGISTER_DEF(0b00110101, Instruction::OP_DECHL, 1)
 }

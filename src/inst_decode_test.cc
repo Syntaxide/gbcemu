@@ -4,16 +4,16 @@
 #include <iostream>
 
 #define TEST_CATEGORY(name) puts(name)
-#define TEST_EQ(a, b) {\
+#define TEST_EQ2(a, b, c) {                        \
   auto t1 = a;\
   auto t2 = b;\
   if(t1 == t2){\
-    printf("OK\t");\
+    printf("OK\n");\
   }else{\
-    printf("FAIL\t%d != %d at %d\t", t1, t2, __LINE__);  \
+    printf("FAIL\t%d != %d at %d " #b "\n", t1, t2, c);  \
   }\
-  printf(#a" = " #b "\t\n");                      \
   }
+#define TEST_EQ(a, b) TEST_EQ2(a,b, __LINE__)
 
 void test_select() {
   TEST_CATEGORY("instruction decoding");
@@ -23,7 +23,18 @@ void test_select() {
   TEST_EQ(select_bits(0xf2, 7, 6), 3);
 }
 
-void test_ld_decode() {
+void check_instr(uint8_t rom1, Instruction::Operation op, char bytes_expected, int line) {
+  Instruction instruction;
+  uint8_t rom[3];
+  rom[0] = rom1;
+  rom[1] = 123;
+  rom[2] = 213;
+  decode_instruction(rom, &instruction);
+  TEST_EQ2(instruction.operation, op, line);
+  TEST_EQ2(instruction.bytes_used, bytes_expected, line);
+}
+
+void test_instr_decode() {
   TEST_CATEGORY("testing ld instructions");
   Instruction instruction;
   unsigned char rom[2] = {0, 0};
@@ -128,58 +139,184 @@ void test_ld_decode() {
   TEST_EQ(instruction.bytes_used, 3);
 
   // LD (HLI), A
-  rom[0] = 0b00100010;
-  decode_instruction(rom, &instruction);
-  TEST_EQ(instruction.operation, Instruction::OP_LDHLIA);
-  TEST_EQ(instruction.bytes_used, 1);
-
+  check_instr(0b00100010,
+              Instruction::OP_LDHLIA,
+              1,
+              __LINE__);
   // LD  (HLD), A
-  rom[0] = 0b00110010;
-  decode_instruction(rom, &instruction);
-  TEST_EQ(instruction.operation, Instruction::OP_LDHLDA);
-  TEST_EQ(instruction.bytes_used, 1);
-
+  check_instr(0b00110010,
+              Instruction::OP_LDHLDA,
+              1,
+              __LINE__);
   // LD dd, nn
-  rom[0] = 0b00000001;
-  decode_instruction(rom, &instruction);
-  TEST_EQ(instruction.operation, Instruction::OP_LDDDNN);
-  TEST_EQ(instruction.bytes_used, 3);
-
+  check_instr(0b00000001,
+              Instruction::OP_LDDDNN,
+              3,
+              __LINE__);
   // LD SP, HL
-  rom[0] = 0b11111001;
-  decode_instruction(rom, &instruction);
-  TEST_EQ(instruction.operation, Instruction::OP_LDSPHL);
-  TEST_EQ(instruction.bytes_used, 1);
-
+  check_instr(0b11111001,
+              Instruction::OP_LDSPHL,
+              1,
+              __LINE__);
   // PUSH qq
-  rom[0] = 0b11000101;
-  decode_instruction(rom, &instruction);
-  TEST_EQ(instruction.operation, Instruction::OP_PUSHQQ);
-  TEST_EQ(instruction.bytes_used, 1);
-
+  check_instr(0b11000101,
+              Instruction::OP_PUSHQQ,
+              1,
+              __LINE__);
   // POP qq
-  rom[0] = 0b11000001;
-  decode_instruction(rom, &instruction);
-  TEST_EQ(instruction.operation, Instruction::OP_POPQQ);
-  TEST_EQ(instruction.bytes_used, 1);
-
+  check_instr(0b11000001,
+              Instruction::OP_POPQQ,
+              1,
+              __LINE__);
   // LDHL SP, e
-  rom[0] = 0b11111000;
-  decode_instruction(rom, &instruction);
-  TEST_EQ(instruction.operation, Instruction::OP_LDHLSP);
-  TEST_EQ(instruction.bytes_used, 2);
-
+  check_instr(0b11111000,
+              Instruction::OP_LDHLSP,
+              2,
+              __LINE__);
   // LD nn, SP
-  rom[0] = 0b00001000;
-  decode_instruction(rom, &instruction);
-  TEST_EQ(instruction.operation, Instruction::OP_LDNNSP);
-  TEST_EQ(instruction.bytes_used, 3);
-
-
+  check_instr(0b00001000,
+              Instruction::OP_LDNNSP,
+              3,
+              __LINE__);
+  // ADD A, R
+  check_instr(0b10000000,
+              Instruction::OP_ADDAR,
+              1,
+              __LINE__);
+  // ADD A, N
+  check_instr(0b11000110,
+              Instruction::OP_ADDAN,
+              2,
+              __LINE__);
+  // ADD A, HL
+  check_instr(0b10000110,
+              Instruction::OP_ADDAHL,
+              1,
+              __LINE__);
+  // ADC A, R
+  check_instr(0b10001001,
+              Instruction::OP_ADCAR,
+              1,
+              __LINE__);
+  // ADC A, N
+  check_instr(0b11001110,
+              Instruction::OP_ADCAN,
+              2,
+              __LINE__);
+  // ADC A, HL
+  check_instr(0b10001110,
+              Instruction::OP_ADCAHL,
+              1,
+              __LINE__);
+  // SUB R
+  check_instr(0b10010001,
+              Instruction::OP_SUBR,
+              1,
+              __LINE__);
+  // SUB N
+  check_instr(0b11010110,
+              Instruction::OP_SUBN,
+              1,
+              __LINE__);
+  // SUB HL
+  check_instr(0b11010110,
+              Instruction::OP_SUBHL,
+              2,
+              __LINE__);
+  // SBC A, R
+  check_instr(0b10011001,
+              Instruction::OP_SBCAR,
+              1,
+              __LINE__);
+  // SBC A, N
+  check_instr(0b11011110,
+              Instruction::OP_SBCAN,
+              2,
+              __LINE__);
+  // SBC A, HL
+  check_instr(0b10011110,
+              Instruction::OP_SBCAHL,
+              1,
+              __LINE__);
+  // AND R
+  check_instr(0b10100001,
+              Instruction::OP_ANDN,
+              2,
+              __LINE__);
+  // AND HL
+  check_instr(0b10100110,
+              Instruction::OP_ANDHL,
+              1,
+              __LINE__);
+  // OR R
+  check_instr(0b10110001,
+              Instruction::OP_ORR,
+              1,
+              __LINE__);
+  // OR N
+  check_instr(0b11110110,
+              Instruction::OP_ORN,
+              2,
+              __LINE__);
+  // OR HL
+  check_instr(0b10110110,
+              Instruction::OP_ORHL,
+              1,
+              __LINE__);
+  // XOR R
+  check_instr(0b10101001,
+              Instruction::OP_XORR,
+              1,
+              __LINE__);
+  // XOR N
+  check_instr(0b11101110,
+              Instruction::OP_XORN,
+              2,
+              __LINE__);
+  // XOR HL
+  check_instr(0b10101110,
+              Instruction::OP_XORHL,
+              1,
+              __LINE__);
+  // CP R
+  check_instr(0b10111001,
+              Instruction::OP_CPR,
+              1,
+              __LINE__);
+  // CP N
+  check_instr(0b11111110,
+              Instruction::OP_CPN,
+              2,
+              __LINE__);
+  // CP HL
+  check_instr(0b10111110,
+              Instruction::OP_CPHL,
+              1,
+              __LINE__);
+  // INC R
+  check_instr(0b00001100,
+              Instruction::OP_INCR,
+              1,
+              __LINE__);
+  // INC HL
+  check_instr(0b00110100,
+              Instruction::OP_INCHL,
+              1,
+              __LINE__);
+  // DEC R
+  check_instr(0b00001101,
+              Instruction::OP_DECR,
+              1,
+              __LINE__);
+  // DEC HL
+  check_instr(0b00110101,
+              Instruction::OP_DECHL,
+              1,
+              __LINE__);
 }
 
 int main(void) {
   test_select();
-  test_ld_decode();
+  test_instr_decode();
   return 0;
 }
