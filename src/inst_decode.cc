@@ -26,7 +26,8 @@ uint8_t select_bits(uint8_t in, char start, char end) {
 
 struct Instruction {
   enum Operation {
-    OP_LDRR,
+    // 8 bit transfer / IO (p85)
+    OP_LDRR = 1,
     OP_LDRN,
     OP_LDRHL,
     OP_LDHLR,
@@ -45,6 +46,15 @@ struct Instruction {
     OP_LDDEA,
     OP_LDHLIA,
     OP_LDHLDA,
+
+    // 16 bit transfer (p90)
+    OP_LDDDNN,
+    OP_LDSPHL,
+    OP_PUSHQQ,
+    OP_POPQQ,
+    OP_LDHLSP,
+    OP_LDNNSP,
+
   } operation;
   uint8_t op1, op2;
   uint8_t immediate;
@@ -85,14 +95,23 @@ void decode_instruction(unsigned char *rom, Instruction *decoded) {
       decoded->operation = Instruction::OP_LDHLIA;
     } else if(*rom == 0b00110010) {
       decoded->operation = Instruction::OP_LDHLDA;
+    } else if((*rom & 0b11001111) == 1) {
+      decoded->operation = Instruction::OP_LDDDNN;
+      decoded->bytes_used = 3;
+    } else if(*rom == 0b00001000) {
+      decoded->operation = Instruction::OP_LDNNSP;
+      decoded->bytes_used = 3;
+    } else {
+      puts("invalid 00 instruction");
+      exit(-1);
     }
     break;
   case 1:
     if(op1 == REG_6) {
       decoded->operation = Instruction::OP_LDHLR;
-    } else if(op2 == REG_6)
+    } else if(op2 == REG_6) {
       decoded->operation = Instruction::OP_LDRHL;
-    else {
+    } else {
       decoded->operation = Instruction::OP_LDRR;
     }
     break;
@@ -113,6 +132,15 @@ void decode_instruction(unsigned char *rom, Instruction *decoded) {
     } else if(*rom == 0b11101010) {
       decoded->operation = Instruction::OP_LDNNA;
       decoded->bytes_used = 3;
+    } else if(*rom == 0b11111001) {
+      decoded->operation = Instruction::OP_LDSPHL;
+    } else if((*rom & 0b11001111) == 0b11000101) {
+      decoded->operation = Instruction::OP_PUSHQQ;
+    } else if((*rom & 0b11001111) == 0b11000001) {
+      decoded->operation = Instruction::OP_POPQQ;
+    } else if(*rom == 0b11111000) {
+      decoded->operation = Instruction::OP_LDHLSP;
+      decoded->bytes_used = 2;
     }
     break;
   default:

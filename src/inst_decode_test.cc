@@ -137,7 +137,44 @@ void test_ld_decode() {
   rom[0] = 0b00110010;
   decode_instruction(rom, &instruction);
   TEST_EQ(instruction.operation, Instruction::OP_LDHLDA);
-  TEST_EQ(instruction.bytes_used, 1)
+  TEST_EQ(instruction.bytes_used, 1);
+
+  // LD dd, nn
+  rom[0] = 0b00000001;
+  decode_instruction(rom, &instruction);
+  TEST_EQ(instruction.operation, Instruction::OP_LDDDNN);
+  TEST_EQ(instruction.bytes_used, 3);
+
+  // LD SP, HL
+  rom[0] = 0b11111001;
+  decode_instruction(rom, &instruction);
+  TEST_EQ(instruction.operation, Instruction::OP_LDSPHL);
+  TEST_EQ(instruction.bytes_used, 1);
+
+  // PUSH qq
+  rom[0] = 0b11000101;
+  decode_instruction(rom, &instruction);
+  TEST_EQ(instruction.operation, Instruction::OP_PUSHQQ);
+  TEST_EQ(instruction.bytes_used, 1);
+
+  // POP qq
+  rom[0] = 0b11000001;
+  decode_instruction(rom, &instruction);
+  TEST_EQ(instruction.operation, Instruction::OP_POPQQ);
+  TEST_EQ(instruction.bytes_used, 1);
+
+  // LDHL SP, e
+  rom[0] = 0b11111000;
+  decode_instruction(rom, &instruction);
+  TEST_EQ(instruction.operation, Instruction::OP_LDHLSP);
+  TEST_EQ(instruction.bytes_used, 2);
+
+  // LD nn, SP
+  rom[0] = 0b00001000;
+  decode_instruction(rom, &instruction);
+  TEST_EQ(instruction.operation, Instruction::OP_LDNNSP);
+  TEST_EQ(instruction.bytes_used, 3);
+
 
 }
 
