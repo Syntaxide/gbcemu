@@ -55,6 +55,46 @@ struct Instruction {
     OP_LDHLSP,
     OP_LDNNSP,
 
+    // 8bit arith, logical
+    OP_ADDAR,
+    OP_ADDAN,
+    OP_ADDAHL,
+
+    OP_ADCAR,
+    OP_ADCAN,
+    OP_ADCAHL,
+
+    OP_SUBR,
+    OP_SUBN,
+    OP_SUBHL,
+
+    OP_SBCAR,
+    OP_SBCAN,
+    OP_SBCHL,
+
+    OP_ANDR,
+    OP_ANDN,
+    OP_ANDHL,
+
+
+    OP_ORR,
+    OP_ORN,
+    OP_ORHL,
+
+    OP_XORR,
+    OP_XORN,
+    OP_XORHL,
+
+    OP_CPR,
+    OP_CPN,
+    OP_CPHL,
+
+    OP_INCR,
+    OP_INCHL,
+
+    OP_DECR,
+    OP_DECHL,
+
   } operation;
   uint8_t op1, op2;
   uint8_t immediate;
@@ -62,6 +102,10 @@ struct Instruction {
   uint8_t bytes_used;
 };
 
+
+bool is_reg(uint8_t code) {
+  return (code < 8) && (code != 2) && (code != 6);
+}
 void decode_instruction(unsigned char *rom, Instruction *decoded) {
   memset(decoded, 0, sizeof(Instruction));
   uint8_t instr = select_bits(*rom, 7, 6);
@@ -73,10 +117,10 @@ void decode_instruction(unsigned char *rom, Instruction *decoded) {
   printf("i=%d\top1=%d\top2=%d\n", instr, decoded->op1, decoded->op2);
   switch(instr) {
   case 0:
-    if(op1 == REG_6 && op2 == REG_6) {
+    if(*rom == 0b00110110) {
       decoded->operation = Instruction::OP_LDHLN;
       decoded->bytes_used = 2;
-    } else if(op2 == REG_6){
+    } else if(op2 == REG_6 && is_reg(op1)){
       decoded->operation = Instruction::OP_LDRN;
       decoded->bytes_used = 2;
     } else if(*rom == 0b00001010) {
@@ -107,9 +151,9 @@ void decode_instruction(unsigned char *rom, Instruction *decoded) {
     }
     break;
   case 1:
-    if(op1 == REG_6) {
+    if(op1 == REG_6 && is_reg(op2)) {
       decoded->operation = Instruction::OP_LDHLR;
-    } else if(op2 == REG_6) {
+    } else if(op2 == REG_6 && is_reg(op1)) {
       decoded->operation = Instruction::OP_LDRHL;
     } else {
       decoded->operation = Instruction::OP_LDRR;
