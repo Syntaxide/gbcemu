@@ -82,7 +82,19 @@ uint8_t select_bits(uint8_t in, char start, char end) {
     FUN(OP_INCR)                           \
     FUN(OP_INCHL)                          \
     FUN(OP_DECR)                           \
-    FUN(OP_DECHL)
+  FUN(OP_DECHL)                            \
+  FUN(OP_ADDHLSS)                          \
+  FUN(OP_ADDSPE)                           \
+  FUN(OP_INCSS)                            \
+  FUN(OP_DECSS)                            \
+  FUN(OP_RLCA)                             \
+  FUN(OP_RLA)                              \
+  FUN(OP_RRCA)                             \
+  FUN(OP_RRA)                              \
+  FUN(OP_RLCR)                             \
+  FUN(OP_RLCHL)                            \
+  FUN(OP_RLR)                              \
+  FUN(OP_RLHL) 
 
 static const char *OperationStrings[] = {
     MAP_OPERATIONS(GEN_STRING)
@@ -103,20 +115,26 @@ bool is_reg(uint8_t code) {
 }
 
 #define INSTR_REGISTER_DEF(binary, label, len)\
-  else if(*rom == binary) {                           \
+  else if(byte == binary) {                           \
     decoded->operation = label;                       \
     decoded->bytes_used = len;                        \
   }
 #define INSTR_REGISTER_REG(first, two, label, len)      \
   else if((instr == first) && (op2 == two) && is_reg(op1)){ \
-  decoded->operation = label;                       \
-  decoded->bytes_used = len;                        \
+    decoded->operation = label;                       \
+    decoded->bytes_used = len;                        \
   }
 #define INSTR_REGISTER_REG2(first, one, label, len)                      \
   else if((instr == first) && (op1 == one) && is_reg(op2)){            \
     decoded->operation = label; \
     decoded->bytes_used = len; \
-    }
+  }
+
+#define INSTR_REGISTER_SSMASK(postmask, label, len) \
+  else if((byte & 0b11001111) == postmask){\
+    decoded->operation = label;\
+    decoded->bytes_used = len;\
+  }
 
 
 void decode_instruction(unsigned char *rom, Instruction *decoded) {
@@ -124,36 +142,38 @@ void decode_instruction(unsigned char *rom, Instruction *decoded) {
   uint8_t instr = select_bits(*rom, 7, 6);
   uint8_t op1 = decoded->op1 = select_bits(*rom, 5, 3);
   uint8_t op2 = decoded->op2 = select_bits(*rom, 2, 0);
+  decoded->operation = (Instruction::Operation)0xff;
   decoded->immediate = rom[1];
   decoded->immediate2 = rom[2];
   decoded->bytes_used = 1;
+  unsigned char byte = rom[0];
   printf("i=%d\top1=%d\top2=%d\n", instr, decoded->op1, decoded->op2);
-    if(*rom == 0b00110110) {
+    if(byte == 0b00110110) {
       decoded->operation = Instruction::OP_LDHLN;
       decoded->bytes_used = 2;
     } else if(instr == 0 &&op2 == REG_6 && is_reg(op1)){
       decoded->operation = Instruction::OP_LDRN;
       decoded->bytes_used = 2;
-    } else if(*rom == 0b00001010) {
+    } else if(byte == 0b00001010) {
       decoded->operation = Instruction::OP_LDABC;
-    } else if(*rom == 0b00011010) {
+    } else if(byte == 0b00011010) {
       decoded->operation = Instruction::OP_LDADE;
-    } else if(*rom == 0b00101010) {
+    } else if(byte == 0b00101010) {
       decoded->operation = Instruction::OP_LDAHLI;
-    } else if(*rom == 0b00111010) {
+    } else if(byte == 0b00111010) {
       decoded->operation = Instruction::OP_LDAHLD;
-    } else if(*rom == 0b00000010) {
+    } else if(byte == 0b00000010) {
       decoded->operation = Instruction::OP_LDBCA;
-    } else if(*rom == 0b00010010) {
+    } else if(byte == 0b00010010) {
       decoded->operation = Instruction::OP_LDDEA;
-    } else if(*rom == 0b00100010) {
+    } else if(byte == 0b00100010) {
       decoded->operation = Instruction::OP_LDHLIA;
-    } else if(*rom == 0b00110010) {
+    } else if(byte == 0b00110010) {
       decoded->operation = Instruction::OP_LDHLDA;
-    } else if((*rom & 0b11001111) == 1) {
+    } else if((byte & 0b11001111) == 1) {
       decoded->operation = Instruction::OP_LDDDNN;
       decoded->bytes_used = 3;
-    } else if(*rom == 0b00001000) {
+    } else if(byte == 0b00001000) {
       decoded->operation = Instruction::OP_LDNNSP;
       decoded->bytes_used = 3;
     }  else if(instr == 1 && op1 == REG_6 && is_reg(op2)) {
@@ -166,80 +186,80 @@ void decode_instruction(unsigned char *rom, Instruction *decoded) {
       decoded->operation = Instruction::OP_SUBR;
     } else if(instr == 2 && op1 == 3 && is_reg(op2)) {
       decoded->operation = Instruction::OP_SBCAR;
-    } else if(*rom == 0b10011110) {
+    } else if(byte == 0b10011110) {
       decoded->operation = Instruction::OP_SBCAHL;
-    } else if(*rom == 0b10100110) {
+    } else if(byte == 0b10100110) {
       decoded->operation = Instruction::OP_ANDHL;
     } else if(instr == 2 && op1 == 6 && is_reg(op2)) {
       decoded->operation = Instruction::OP_ORR;
-    } else if(*rom == 0b10110110) {
+    } else if(byte == 0b10110110) {
       decoded->operation = Instruction::OP_ORHL;
     } else if(instr == 2 && op1 == 5 && is_reg(op2)) {
       decoded->operation = Instruction::OP_XORR;
-    } else if(*rom == 0b10101110) {
+    } else if(byte == 0b10101110) {
       decoded->operation = Instruction::OP_XORHL;
     } else if(instr == 2 && op1 == 7 && is_reg(op2)) {
       decoded->operation = Instruction::OP_CPR;
-    } else if(*rom == 0b10111110) {
+    } else if(byte == 0b10111110) {
       decoded->operation = Instruction::OP_CPHL;
     } else if(instr == 2 && op1 == 0 && is_reg(op2)) {
       decoded->operation = Instruction::OP_ADDAR;
-    } else if(instr == 2 && *rom == 0b10000110) {
+    } else if(instr == 2 && byte == 0b10000110) {
       decoded->operation = Instruction::OP_ADDAHL;
     } else if(instr == 2 && op1 == 1 && is_reg(op2)) {
       decoded->operation = Instruction::OP_ADCAR;
-    } else if(*rom == 0b10001110) {
+    } else if(byte == 0b10001110) {
       decoded->operation = Instruction::OP_ADCAHL;
-    } else if(*rom == 0b11110010) {
+    } else if(byte == 0b11110010) {
       decoded->operation = Instruction::OP_LDAC;
-    } else if(*rom == 0b11100010) {
+    } else if(byte == 0b11100010) {
       decoded->operation = Instruction::OP_LDCA;
-    } else if(*rom == 0b11110000) {
+    } else if(byte == 0b11110000) {
       decoded->operation = Instruction::OP_LDAN;
       decoded->bytes_used = 2;
-    } else if(*rom == 0b11100000) {
+    } else if(byte == 0b11100000) {
       decoded->operation = Instruction::OP_LDNA;
       decoded->bytes_used = 2;
-    } else if(*rom == 0b11111010) {
+    } else if(byte == 0b11111010) {
       decoded->operation = Instruction::OP_LDANN;
       decoded->bytes_used = 3;
-    } else if(*rom == 0b11101010) {
+    } else if(byte == 0b11101010) {
       decoded->operation = Instruction::OP_LDNNA;
       decoded->bytes_used = 3;
-    } else if(*rom == 0b11111001) {
+    } else if(byte == 0b11111001) {
       decoded->operation = Instruction::OP_LDSPHL;
-    } else if((*rom & 0b11001111) == 0b11000101) {
+    } else if((byte & 0b11001111) == 0b11000101) {
       decoded->operation = Instruction::OP_PUSHQQ;
-    } else if((*rom & 0b11001111) == 0b11000001) {
+    } else if((byte & 0b11001111) == 0b11000001) {
       decoded->operation = Instruction::OP_POPQQ;
-    } else if(*rom == 0b11111000) {
+    } else if(byte == 0b11111000) {
       decoded->operation = Instruction::OP_LDHLSP;
       decoded->bytes_used = 2;
-    } else if(*rom == 0b11010110) {
+    } else if(byte == 0b11010110) {
       decoded->operation = Instruction::OP_SUBN;
       decoded->bytes_used = 2;
-    } else if(*rom == 0b10010110) {
+    } else if(byte == 0b10010110) {
       decoded->operation = Instruction::OP_SUBHL;
       decoded->bytes_used = 1;
-    } else if(*rom == 0b11011110) {
+    } else if(byte == 0b11011110) {
       decoded->operation = Instruction::OP_SBCAN;
       decoded->bytes_used = 2;
-    } else if(*rom == 0b11100110) {
+    } else if(byte == 0b11100110) {
       decoded->operation = Instruction::OP_ANDN;
       decoded->bytes_used = 2;
-    } else if(*rom == 0b11110110) {
+    } else if(byte == 0b11110110) {
       decoded->operation = Instruction::OP_ORN;
       decoded->bytes_used = 2;
-    } else if(*rom == 0b11101110) {
+    } else if(byte == 0b11101110) {
       decoded->operation = Instruction::OP_XORN;
       decoded->bytes_used = 2;
-    } else if(*rom == 0b11111110) {
+    } else if(byte == 0b11111110) {
       decoded->operation = Instruction::OP_CPN;
       decoded->bytes_used = 2;
-    } else if(*rom == 0b11000110) {
+    } else if(byte == 0b11000110) {
       decoded->operation = Instruction::OP_ADDAN;
       decoded->bytes_used = 2;
-    } else if(*rom == 0b11001110) {
+    } else if(byte == 0b11001110) {
       decoded->operation = Instruction::OP_ADCAN;
       decoded->bytes_used = 2;
     }
@@ -272,4 +292,27 @@ void decode_instruction(unsigned char *rom, Instruction *decoded) {
 
     INSTR_REGISTER_REG(0, 0b101, Instruction::OP_DECR, 1)
     INSTR_REGISTER_DEF(0b00110101, Instruction::OP_DECHL, 1)
+
+    INSTR_REGISTER_SSMASK(0b00001001, Instruction::OP_ADDHLSS, 1)
+    INSTR_REGISTER_DEF(0b11101000, Instruction::OP_ADDSPE, 2)
+    INSTR_REGISTER_SSMASK(0b00000011, Instruction::OP_INCSS, 1)
+    INSTR_REGISTER_SSMASK(0b00001011, Instruction::OP_DECSS, 1)
+
+    INSTR_REGISTER_DEF(0b00000111, Instruction::OP_RLCA, 1)
+    INSTR_REGISTER_DEF(0b00010111, Instruction::OP_RLA, 1)
+    INSTR_REGISTER_DEF(0b00001111, Instruction::OP_RRCA, 1)
+    INSTR_REGISTER_DEF(0b00011111, Instruction::OP_RRA, 1)
+
+    else if(*rom == 0b11001011) {
+      unsigned char byte = rom[1];
+      if((rom[1] & 0b11111000) == 0 && is_reg(rom[1] & 0b111)) {
+        decoded->operation = Instruction::OP_RLCR;
+        decoded->bytes_used = 2;
+      }
+      INSTR_REGISTER_DEF(0b00000110, Instruction::OP_RLCHL, 2)
+      INSTR_REGISTER_REG2(0, 0b10, Instruction::OP_RLR, 2)
+      INSTR_REGISTER_DEF(0b00010110, Instruction::OP_RLHL, 2)
+
+    }
+
 }

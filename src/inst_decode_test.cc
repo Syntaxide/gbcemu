@@ -35,6 +35,18 @@ void check_instr(uint8_t rom1, Instruction::Operation op, char bytes_expected, i
   TEST_EQ2(instruction.bytes_used, bytes_expected, line);
 }
 
+void check_instr2(uint8_t rom1, uint8_t rom2, Instruction::Operation op, char bytes_expected, int line) {
+  Instruction instruction;
+  uint8_t rom[3];
+  rom[0] = rom1;
+  rom[1] = rom2;
+  rom[2] = 213;
+  printf("checking operation %s\n", OperationStrings[op]);
+  decode_instruction(rom, &instruction);
+  TEST_EQ2(instruction.operation, op, line);
+  TEST_EQ2(instruction.bytes_used, bytes_expected, line);
+}
+
 void test_instr_decode() {
   TEST_CATEGORY("testing ld instructions");
   Instruction instruction;
@@ -319,6 +331,80 @@ void test_instr_decode() {
               Instruction::OP_DECHL,
               1,
               __LINE__);
+
+  // ADD HL, SS
+  check_instr(0b00111001,
+              Instruction::OP_ADDHLSS,
+              1,
+              __LINE__);
+
+  // ADD SP, e
+  check_instr(0b11101000,
+              Instruction::OP_ADDSPE,
+              2,
+              __LINE__);
+
+  // INC SS
+  check_instr(0b00000011,
+              Instruction::OP_INCSS,
+              1,
+              __LINE__);
+
+  // DEC SS
+  check_instr(0b00001011,
+              Instruction::OP_DECSS,
+              1,
+              __LINE__);
+  // RCLA
+  check_instr(0b00000111,
+              Instruction::OP_RLCA,
+              1,
+              __LINE__);
+  // RLA
+  check_instr(0b00010111,
+              Instruction::OP_RLA,
+              1,
+              __LINE__);
+  // RRCA
+  check_instr(0b00001111,
+              Instruction::OP_RRCA,
+              1,
+              __LINE__);
+  // RRA
+  check_instr(0b00011111,
+              Instruction::OP_RRA,
+              1,
+              __LINE__);
+  // RLCR
+  check_instr2(0b11001011,
+               0b00000001,
+               Instruction::OP_RLCR,
+               2,
+               __LINE__);
+  // RLCHL
+  check_instr2(0b11001011,
+               0b00000110,
+               Instruction::OP_RLCHL,
+               2,
+               __LINE__);
+  /*
+  else if(rom[0] == 0b11001011 && ) {
+    if(rom[1] & 0b11111000 == 0) {
+        if(is_reg(rom[1] & 0b00000111)) {
+            decoded->operaton = Instruction::OP_RLCR;
+        } else if(rom[1] == 0b110) {
+        decoded->operation = Instruction::OP_RLCHL;
+        }
+    } else if(rom[1] & 0b11111000 == 0b10) {
+      if(is_reg(rom[1] & 0b00000111)) {
+        decoded->operaton = Instruction::OP_RLR;
+      } else if(rom[1] == 0b110) {
+        decoded->operation = Instruction::OP_RLHL;
+      }
+    }
+  }
+  */
+
 }
 
 int main(void) {
