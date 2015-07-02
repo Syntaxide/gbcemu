@@ -94,7 +94,43 @@ uint8_t select_bits(uint8_t in, char start, char end) {
   FUN(OP_RLCR)                             \
   FUN(OP_RLCHL)                            \
   FUN(OP_RLR)                              \
-  FUN(OP_RLHL) 
+  FUN(OP_RLHL)    \
+  FUN(OP_RRCR)		\
+  FUN(OP_RRCHL)		\
+  FUN(OP_RRR)		  \
+  FUN(OP_RRHL)    \
+  FUN(OP_SLAR)    \
+  FUN(OP_SLAHL)   \
+  FUN(OP_SRAR)    \
+  FUN(OP_SRARHL)  \
+  FUN(OP_SRLR)    \
+  FUN(OP_SRLHL)   \
+  FUN(OP_SWAPR)   \
+  FUN(OP_SWAPHL)  \
+  FUN(OP_BITR)    \
+  FUN(OP_BITHL)   \
+  FUN(OP_SETR)    \
+  FUN(OP_SETHL)   \
+  FUN(OP_RESR)    \
+  FUN(OP_RESHL)   \
+  FUN(OP_JPNN)    \
+  FUN(OP_JPCC)    \
+  FUN(OP_JRE)     \
+  FUN(OP_JRCC)   \
+  FUN(OP_JPHL)    \
+  FUN(OP_CALLNN)  \
+  FUN(OP_CALLCC)   \
+  FUN(OP_RETI)    \
+  FUN(OP_RET)     \
+  FUN(OP_RST)     \
+  FUN(OP_RETCC)   \
+  FUN(OP_DAA)     \
+  FUN(OP_CPL)     \
+  FUN(OP_NOP)     \
+  FUN(OP_HALT)    \
+  FUN(OP_STOP)
+
+	
 
 static const char *OperationStrings[] = {
     MAP_OPERATIONS(GEN_STRING)
@@ -120,14 +156,19 @@ bool is_reg(uint8_t code) {
     decoded->bytes_used = len;                        \
   }
 #define INSTR_REGISTER_REG(first, two, label, len)      \
-  else if((instr == first) && (op2 == two) && is_reg(op1)){ \
-    decoded->operation = label;                       \
-    decoded->bytes_used = len;                        \
+  else if((select_bits(byte, 7,6) == first) && 		\
+	(select_bits(byte, 2,0) == two) &&		\
+	 is_reg(select_bits(byte, 5, 3))){		\
+    decoded->operation = label;                       	\
+    decoded->bytes_used = len;                        	\
   }
-#define INSTR_REGISTER_REG2(first, one, label, len)                      \
-  else if((instr == first) && (op1 == one) && is_reg(op2)){            \
-    decoded->operation = label; \
-    decoded->bytes_used = len; \
+
+#define INSTR_REGISTER_REG2(first, one, label, len)     \
+  else if((select_bits(byte, 7,6) == first) &&		\
+	 (select_bits(byte, 5, 3) == one) &&		\
+	is_reg(select_bits(byte, 2, 0))){		\
+    decoded->operation = label; 			\
+    decoded->bytes_used = len; 				\
   }
 
 #define INSTR_REGISTER_SSMASK(postmask, label, len) \
@@ -135,6 +176,10 @@ bool is_reg(uint8_t code) {
     decoded->operation = label;\
     decoded->bytes_used = len;\
   }
+
+#define INSTR(label, len)\
+  decoded->operation = label;\
+  decoded->bytes_used = len;
 
 
 void decode_instruction(unsigned char *rom, Instruction *decoded) {
@@ -180,7 +225,7 @@ void decode_instruction(unsigned char *rom, Instruction *decoded) {
       decoded->operation = Instruction::OP_LDHLR;
     } else if(instr == 1 && op2 == REG_6 && is_reg(op1)) {
       decoded->operation = Instruction::OP_LDRHL;
-    } else if(instr == 1 && is_reg(op1) && is_reg(op2)){
+    } else if(instr == 0b01 && is_reg(op1) && is_reg(op2)){
       decoded->operation = Instruction::OP_LDRR;
     } else if(instr == 2 && op1 == 2 && is_reg(op2)) {
       decoded->operation = Instruction::OP_SUBR;
@@ -303,16 +348,82 @@ void decode_instruction(unsigned char *rom, Instruction *decoded) {
     INSTR_REGISTER_DEF(0b00001111, Instruction::OP_RRCA, 1)
     INSTR_REGISTER_DEF(0b00011111, Instruction::OP_RRA, 1)
 
-    else if(*rom == 0b11001011) {
+    INSTR_REGISTER_DEF(0b11000011, Instruction::OP_JPNN, 3)
+    else if(instr == 0b11 && (op1 & 0b100) == 0 && op2 == 0b010) {
+      INSTR(Instruction::OP_JPCC, 3)
+    }
+    INSTR_REGISTER_DEF(0b00011000, Instruction::OP_JRE, 2)
+    else if(instr == 0 && (op1 & 0b100) && op2 == 0) {
+      INSTR(Instruction::OP_JRCC, 2)
+    } 
+    INSTR_REGISTER_DEF(0b11101001, Instruction::OP_JPHL, 1)
+    INSTR_REGISTER_DEF(0b11001101, Instruction::OP_CALLNN, 3)
+    else if(instr == 0b11 && !op1 && op2 == 0b100) {
+      INSTR(Instruction::OP_CALLCC, 3)
+    }
+    INSTR_REGISTER_DEF(0b11001001, Instruction::OP_RET, 1)
+    else if(instr == 0b11 && !(op1&0b100) && op2 == 0) {
+      INSTR(Instruction::OP_RETCC, 1)
+    }
+    INSTR_REGISTER_DEF(0b11011001, Instruction::OP_RETI, 1)
+    INSTR_REGISTER_DEF(0b11111111, Instruction::OP_RST, 1)
+    INSTR_REGISTER_DEF(0b00100111, Instruction::OP_DAA, 1)
+    INSTR_REGISTER_DEF(0b00101111, Instruction::OP_CPL, 1)
+    INSTR_REGISTER_DEF(0, Instruction::OP_NOP, 1)
+    INSTR_REGISTER_DEF(0b01110110, Instruction::OP_HALT, 1)
+    else if(byte == 0b00010000) {
+      if(rom[1] == 0) {
+        INSTR(Instruction::OP_STOP, 2)
+      }
+    }
+    else if(byte == 0b11001011) {
       unsigned char byte = rom[1];
-      if((rom[1] & 0b11111000) == 0 && is_reg(rom[1] & 0b111)) {
+      uint8_t instr = select_bits(byte, 7, 6);
+      uint8_t op1 = select_bits(byte, 5, 3);
+      uint8_t op2 = select_bits(byte, 2, 0);
+      if((byte & 0b11111000) == 0 && is_reg(byte & 0b111)) {
         decoded->operation = Instruction::OP_RLCR;
         decoded->bytes_used = 2;
       }
       INSTR_REGISTER_DEF(0b00000110, Instruction::OP_RLCHL, 2)
-      INSTR_REGISTER_REG2(0, 0b10, Instruction::OP_RLR, 2)
+      INSTR_REGISTER_REG2(0, 0b010, Instruction::OP_RLR, 2)
       INSTR_REGISTER_DEF(0b00010110, Instruction::OP_RLHL, 2)
+      INSTR_REGISTER_REG2(0, 0b001, Instruction::OP_RRCR, 2)
+      INSTR_REGISTER_DEF(0b00001110, Instruction::OP_RRCHL, 2)
+      INSTR_REGISTER_REG2(0, 0b011, Instruction::OP_RRR, 2)
+      INSTR_REGISTER_REG2(0, 0b100, Instruction::OP_SLAR, 2)
+      INSTR_REGISTER_REG2(0, 0b101, Instruction::OP_SRAR, 2)
+      INSTR_REGISTER_DEF(0b00101110, Instruction::OP_SRARHL, 2)
+      INSTR_REGISTER_REG2(0, 0b111, Instruction::OP_SRLR, 2)
+      INSTR_REGISTER_DEF(0b00111110, Instruction::OP_SRLHL, 2)
+      INSTR_REGISTER_REG2(0, 0b110, Instruction::OP_SWAPR, 2)
+      INSTR_REGISTER_DEF(0b00110110, Instruction::OP_SWAPHL, 2)
+      else if(instr == 0b01 && is_reg(op2)) {
+        decoded->operation = Instruction::OP_BITR;
+        decoded->bytes_used = 2;
+      } else if(instr == 0b01 && op2 == 0b110) {
+        INSTR(Instruction::OP_BITHL, 2)
+      } else if(instr == 0b11 && is_reg(op2)) {
+        INSTR(Instruction::OP_SETR, 2)
+      } else if(instr == 0b11 && op2 == 0b110) {
+        INSTR(Instruction::OP_SETHL, 2)
+      } else if(instr == 0b10 && is_reg(op2)) {
+        INSTR(Instruction::OP_RESR, 2)
+      } else if(instr == 0b10 && op2 == 0b110) {
+        INSTR(Instruction::OP_RESHL, 2)
+      }
 
+    } else if(byte == 0b11011011) {
+      unsigned char byte = rom[1];
+      uint8_t instr = select_bits(*rom, 7, 6);
+      uint8_t op1 = select_bits(*rom, 5, 3);
+      uint8_t op2 = select_bits(*rom, 2, 0);
+      if(byte == 0b00011110) {
+        decoded->operation = Instruction::OP_RRHL;
+        decoded->bytes_used = 2;
+      }
+      INSTR_REGISTER_DEF(0b00100110, Instruction::OP_SLAHL, 2)
     }
+
 
 }

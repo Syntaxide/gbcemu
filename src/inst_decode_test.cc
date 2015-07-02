@@ -21,7 +21,11 @@ void test_select() {
   TEST_EQ(select_bits(0xf2, 1, 0), 2);
   TEST_EQ(select_bits(0xf2, 7, 7), 1);
   TEST_EQ(select_bits(0xf2, 7, 6), 3);
+  TEST_EQ(select_bits(0b11, 1, 0), 3);
 }
+
+#define CHECK_INSTR(rom1, op, bytes_expected) check_instr(rom1, op, bytes_expected, __LINE__);
+#define CHECK_INSTR2(rom1, rom2, op, bytes_expected) check_instr2(rom1, rom2, op, bytes_expected, __LINE__);
 
 void check_instr(uint8_t rom1, Instruction::Operation op, char bytes_expected, int line) {
   Instruction instruction;
@@ -152,258 +156,328 @@ void test_instr_decode() {
   TEST_EQ(instruction.bytes_used, 3);
 
   // LD (HLI), A
-  check_instr(0b00100010,
+  CHECK_INSTR(0b00100010,
               Instruction::OP_LDHLIA,
-              1,
-              __LINE__);
+              1);
   // LD  (HLD), A
-  check_instr(0b00110010,
+  CHECK_INSTR(0b00110010,
               Instruction::OP_LDHLDA,
-              1,
-              __LINE__);
+              1);
   // LD dd, nn
-  check_instr(0b00000001,
+  CHECK_INSTR(0b00000001,
               Instruction::OP_LDDDNN,
-              3,
-              __LINE__);
+              3);
   // LD SP, HL
-  check_instr(0b11111001,
+  CHECK_INSTR(0b11111001,
               Instruction::OP_LDSPHL,
-              1,
-              __LINE__);
+              1);
   // PUSH qq
-  check_instr(0b11000101,
+  CHECK_INSTR(0b11000101,
               Instruction::OP_PUSHQQ,
-              1,
-              __LINE__);
+              1);
   // POP qq
-  check_instr(0b11000001,
+  CHECK_INSTR(0b11000001,
               Instruction::OP_POPQQ,
-              1,
-              __LINE__);
+              1);
   // LDHL SP, e
-  check_instr(0b11111000,
+  CHECK_INSTR(0b11111000,
               Instruction::OP_LDHLSP,
-              2,
-              __LINE__);
+              2);
   // LD nn, SP
-  check_instr(0b00001000,
+  CHECK_INSTR(0b00001000,
               Instruction::OP_LDNNSP,
-              3,
-              __LINE__);
+              3);
   // ADD A, R
-  check_instr(0b10000000,
+  CHECK_INSTR(0b10000000,
               Instruction::OP_ADDAR,
-              1,
-              __LINE__);
+              1);
   // ADD A, N
-  check_instr(0b11000110,
+  CHECK_INSTR(0b11000110,
               Instruction::OP_ADDAN,
-              2,
-              __LINE__);
+              2);
   // ADD A, HL
-  check_instr(0b10000110,
+  CHECK_INSTR(0b10000110,
               Instruction::OP_ADDAHL,
-              1,
-              __LINE__);
+              1);
   // ADC A, R
-  check_instr(0b10001001,
+  CHECK_INSTR(0b10001001,
               Instruction::OP_ADCAR,
-              1,
-              __LINE__);
+              1);
   // ADC A, N
-  check_instr(0b11001110,
+  CHECK_INSTR(0b11001110,
               Instruction::OP_ADCAN,
-              2,
-              __LINE__);
+              2);
   // ADC A, HL
-  check_instr(0b10001110,
+  CHECK_INSTR(0b10001110,
               Instruction::OP_ADCAHL,
-              1,
-              __LINE__);
+              1);
   // SUB R
-  check_instr(0b10010001,
+  CHECK_INSTR(0b10010001,
               Instruction::OP_SUBR,
-              1,
-              __LINE__);
+              1);
   // SUB N
-  check_instr(0b11010110,
+  CHECK_INSTR(0b11010110,
               Instruction::OP_SUBN,
-              2,
-              __LINE__);
+              2);
   // SUB HL
-  check_instr(0b10010110,
+  CHECK_INSTR(0b10010110,
               Instruction::OP_SUBHL,
-              1,
-              __LINE__);
+              1);
   // SBC A, R
-  check_instr(0b10011001,
+  CHECK_INSTR(0b10011001,
               Instruction::OP_SBCAR,
-              1,
-              __LINE__);
+              1);
   // SBC A, N
-  check_instr(0b11011110,
+  CHECK_INSTR(0b11011110,
               Instruction::OP_SBCAN,
-              2,
-              __LINE__);
+              2);
   // SBC A, HL
-  check_instr(0b10011110,
+  CHECK_INSTR(0b10011110,
               Instruction::OP_SBCAHL,
-              1,
-              __LINE__);
+              1);
   //AND R
-  check_instr(0b10100001,
+  CHECK_INSTR(0b10100001,
               Instruction::OP_ANDR,
-              1,
-              __LINE__);
+              1);
   // AND N
-  check_instr(0b11100110,
+  CHECK_INSTR(0b11100110,
               Instruction::OP_ANDN,
-              2,
-              __LINE__);
+              2);
   // AND HL
-  check_instr(0b10100110,
+  CHECK_INSTR(0b10100110,
               Instruction::OP_ANDHL,
-              1,
-              __LINE__);
+              1);
   // OR R
-  check_instr(0b10110001,
+  CHECK_INSTR(0b10110001,
               Instruction::OP_ORR,
-              1,
-              __LINE__);
+              1);
   // OR N
-  check_instr(0b11110110,
+  CHECK_INSTR(0b11110110,
               Instruction::OP_ORN,
-              2,
-              __LINE__);
+              2);
   // OR HL
-  check_instr(0b10110110,
+  CHECK_INSTR(0b10110110,
               Instruction::OP_ORHL,
-              1,
-              __LINE__);
+              1);
   // XOR R
-  check_instr(0b10101001,
+  CHECK_INSTR(0b10101001,
               Instruction::OP_XORR,
-              1,
-              __LINE__);
+              1);
   // XOR N
-  check_instr(0b11101110,
+  CHECK_INSTR(0b11101110,
               Instruction::OP_XORN,
-              2,
-              __LINE__);
+              2);
   // XOR HL
-  check_instr(0b10101110,
+  CHECK_INSTR(0b10101110,
               Instruction::OP_XORHL,
-              1,
-              __LINE__);
+              1);
   // CP R
-  check_instr(0b10111001,
+  CHECK_INSTR(0b10111001,
               Instruction::OP_CPR,
-              1,
-              __LINE__);
+              1);
   // CP N
-  check_instr(0b11111110,
+  CHECK_INSTR(0b11111110,
               Instruction::OP_CPN,
-              2,
-              __LINE__);
+              2);
   // CP HL
-  check_instr(0b10111110,
+  CHECK_INSTR(0b10111110,
               Instruction::OP_CPHL,
-              1,
-              __LINE__);
+              1);
   // INC R
-  check_instr(0b00001100,
+  CHECK_INSTR(0b00001100,
               Instruction::OP_INCR,
-              1,
-              __LINE__);
+              1);
   // INC HL
-  check_instr(0b00110100,
+  CHECK_INSTR(0b00110100,
               Instruction::OP_INCHL,
-              1,
-              __LINE__);
+              1);
   // DEC R
-  check_instr(0b00001101,
+  CHECK_INSTR(0b00001101,
               Instruction::OP_DECR,
-              1,
-              __LINE__);
+              1);
   // DEC HL
-  check_instr(0b00110101,
+  CHECK_INSTR(0b00110101,
               Instruction::OP_DECHL,
-              1,
-              __LINE__);
+              1);
 
   // ADD HL, SS
-  check_instr(0b00111001,
+  CHECK_INSTR(0b00111001,
               Instruction::OP_ADDHLSS,
-              1,
-              __LINE__);
+              1);
 
   // ADD SP, e
-  check_instr(0b11101000,
+  CHECK_INSTR(0b11101000,
               Instruction::OP_ADDSPE,
-              2,
-              __LINE__);
+              2);
 
   // INC SS
-  check_instr(0b00000011,
+  CHECK_INSTR(0b00000011,
               Instruction::OP_INCSS,
-              1,
-              __LINE__);
-
+              1);
   // DEC SS
-  check_instr(0b00001011,
+  CHECK_INSTR(0b00001011,
               Instruction::OP_DECSS,
-              1,
-              __LINE__);
+              1);
   // RCLA
-  check_instr(0b00000111,
+  CHECK_INSTR(0b00000111,
               Instruction::OP_RLCA,
-              1,
-              __LINE__);
+              1);
   // RLA
-  check_instr(0b00010111,
+  CHECK_INSTR(0b00010111,
               Instruction::OP_RLA,
-              1,
-              __LINE__);
+              1);
   // RRCA
-  check_instr(0b00001111,
+  CHECK_INSTR(0b00001111,
               Instruction::OP_RRCA,
-              1,
-              __LINE__);
+              1);
   // RRA
-  check_instr(0b00011111,
+  CHECK_INSTR(0b00011111,
               Instruction::OP_RRA,
-              1,
-              __LINE__);
+              1);
   // RLCR
-  check_instr2(0b11001011,
+  CHECK_INSTR2(0b11001011,
                0b00000001,
                Instruction::OP_RLCR,
-               2,
-               __LINE__);
-  // RLCHL
-  check_instr2(0b11001011,
+               2); // RLCHL
+  CHECK_INSTR2(0b11001011,
                0b00000110,
                Instruction::OP_RLCHL,
-               2,
-               __LINE__);
-  /*
-  else if(rom[0] == 0b11001011 && ) {
-    if(rom[1] & 0b11111000 == 0) {
-        if(is_reg(rom[1] & 0b00000111)) {
-            decoded->operaton = Instruction::OP_RLCR;
-        } else if(rom[1] == 0b110) {
-        decoded->operation = Instruction::OP_RLCHL;
-        }
-    } else if(rom[1] & 0b11111000 == 0b10) {
-      if(is_reg(rom[1] & 0b00000111)) {
-        decoded->operaton = Instruction::OP_RLR;
-      } else if(rom[1] == 0b110) {
-        decoded->operation = Instruction::OP_RLHL;
-      }
-    }
-  }
-  */
+               2);
+  CHECK_INSTR2(0b11001011,
+               0b00010001,
+               Instruction::OP_RLR,
+               2);
+  CHECK_INSTR2(0b11001011,
+               0b00010110,
+               Instruction::OP_RLHL,
+               2);
+  CHECK_INSTR2(0b11001011, 
+	       0b00001001,
+	       Instruction::OP_RRCR,
+	       2);
+  CHECK_INSTR2(0b11001011,
+	       0b00001110,
+	       Instruction::OP_RRCHL,
+	       2);
+  CHECK_INSTR2(0b11001011,
+	       0b00011001,
+	       Instruction::OP_RRR,
+	       2);
+  CHECK_INSTR2(0b11011011,
+	       0b00011110,
+	       Instruction::OP_RRHL,
+	       2);
+  CHECK_INSTR2(0b11001011,
+	       0b00100001,
+	       Instruction::OP_SLAR,
+	       2);
+  CHECK_INSTR2(0b11011011,
+	       0b00100110,
+	       Instruction::OP_SLAHL,
+	       2);
+  CHECK_INSTR2(0b11001011,
+	       0b00101001,
+	       Instruction::OP_SRAR,
+	       2);
+  CHECK_INSTR2(0b11001011,
+	       0b00101110,
+	       Instruction::OP_SRARHL,
+	       2);
+  CHECK_INSTR2(0b11001011,
+	       0b00111001,
+	       Instruction::OP_SRLR,
+	       2);
+  CHECK_INSTR2(0b11001011,
+	       0b00111110,
+	       Instruction::OP_SRLHL,
+	       2);
+  CHECK_INSTR2(0b11001011,
+	       0b00110001,
+	       Instruction::OP_SWAPR,
+	       2);
+  CHECK_INSTR2(0b11001011,
+	       0b00110110,
+	       Instruction::OP_SWAPHL,
+	       2);
+  CHECK_INSTR2(0b11001011,
+	       0b01111001,
+	       Instruction::OP_BITR,
+	       2);
+  CHECK_INSTR2(0b11001011,
+	       0b01111110,
+	       Instruction::OP_BITHL,
+	       2);
+  CHECK_INSTR2(0b11001011,
+	       0b11111001,
+	       Instruction::OP_SETR,
+	       2);
+  CHECK_INSTR2(0b11001011,
+	       0b11111110,
+	       Instruction::OP_SETHL,
+	       2);
+  CHECK_INSTR2(0b11001011,
+	       0b10111001,
+	       Instruction::OP_RESR,
+	       2);
+  CHECK_INSTR2(0b11001011,
+	       0b10111110,
+	       Instruction::OP_RESHL,
+	       2);
+  CHECK_INSTR(0b11000011,
+	      Instruction::OP_JPNN,
+	      3);
+  CHECK_INSTR(0b11000010,
+	      Instruction::OP_JPCC,
+	      3);
+  CHECK_INSTR(0b00011000,
+	      Instruction::OP_JRE,
+	      2);
+  CHECK_INSTR(0b00111000,
+	      Instruction::OP_JRCC,
+	      2);
+  CHECK_INSTR(0b11101001,
+	      Instruction::OP_JPHL,
+	      1);
+  CHECK_INSTR(0b11001101,
+	      Instruction::OP_CALLNN,
+	      3);
+  CHECK_INSTR(0b11000100,
+	      Instruction::OP_CALLCC,
+	      3);
+  CHECK_INSTR(0b11001001,
+	      Instruction::OP_RET,
+	      1);
+  CHECK_INSTR(0b11011001,
+	      Instruction::OP_RETI,
+	      1);
+  CHECK_INSTR(0b11000000,
+	      Instruction::OP_RETCC,
+	      1);
+  CHECK_INSTR(0b11111111,
+	      Instruction::OP_RST,
+	      1);
+  CHECK_INSTR(0b00100111,
+	      Instruction::OP_DAA,
+	      1);
+  CHECK_INSTR(0b00101111,
+	      Instruction::OP_CPL,
+	      1);
+  CHECK_INSTR(0b00000000,
+	      Instruction::OP_NOP,
+	      1);
+  CHECK_INSTR(0b01110110,
+	      Instruction::OP_HALT,
+	      1);
+  CHECK_INSTR2(0b00010000,
+	       0b00000000,
+	       Instruction::OP_STOP,
+	       2);
+
+
+
+		
+	
+		
 
 }
 
