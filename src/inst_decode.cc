@@ -1,150 +1,18 @@
+#include "inst_decode.h"
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-enum reg_encoding {
-  REG_b = 0,
-  REG_c = 1,
-  REG_2 = 2,
-  REG_e = 3,
-  REG_h = 4,
-  REG_d = 5,
-  REG_6 = 6,
-  REG_a = 7
-};
 
-const uint8_t MASK_76 = 0xC0;
-const uint8_t MASK_543 = 0x38;
-const uint8_t MASK_210 = 0x07;
+#include "rom.h"
 
-// incides   76543210
+// indices   76543210
 // select(0xb10101010)
 uint8_t select_bits(uint8_t in, char start, char end) {
   uint8_t ones = ((1 << (start-end+1)) - 1) << end;
   return (in & ones) >> end;
 }
-
-#define GEN_ENUM(OBJ) OBJ,
-#define GEN_STRING(OBJ) #OBJ,
-#define MAP_OPERATIONS(FUN) \
-  /* 8 bit transfer / IO (p85)*/               \
-  FUN(OP_LDRR)                                 \
-    FUN(OP_LDRN)                               \
-    FUN(OP_LDRHL)                              \
-    FUN(OP_LDHLR)                              \
-    FUN(OP_LDHLN)                              \
-    FUN(OP_LDABC)                              \
-    FUN(OP_LDADE)                              \
-    FUN(OP_LDAC)                               \
-    FUN(OP_LDCA)                               \
-    FUN(OP_LDAN)                               \
-    FUN(OP_LDNA)                               \
-    FUN(OP_LDANN)                              \
-    FUN(OP_LDNNA)                              \
-    FUN(OP_LDAHLI)                             \
-    FUN(OP_LDAHLD)                             \
-    FUN(OP_LDBCA)                              \
-    FUN(OP_LDDEA)                              \
-    FUN(OP_LDHLIA)                             \
-    FUN(OP_LDHLDA)                           \
-    /* 16 bit transfer (p90)*/               \
-    FUN(OP_LDDDNN)                        \
-    FUN(OP_LDSPHL)                        \
-    FUN(OP_PUSHQQ)                        \
-    FUN(OP_POPQQ)                         \
-    FUN(OP_LDHLSP)                        \
-    FUN(OP_LDNNSP)                         \
-    /* 8bit arith logical (p92)*/          \
-    FUN(OP_ADDAR)                          \
-    FUN(OP_ADDAN)                          \
-    FUN(OP_ADDAHL)                         \
-    FUN(OP_ADCAR)                          \
-    FUN(OP_ADCAN)                          \
-    FUN(OP_ADCAHL)                         \
-    FUN(OP_SUBR)                           \
-    FUN(OP_SUBN)                           \
-    FUN(OP_SUBHL)                          \
-    FUN(OP_SBCAR)                          \
-    FUN(OP_SBCAN)                          \
-    FUN(OP_SBCAHL)                         \
-    FUN(OP_ANDR)                           \
-    FUN(OP_ANDN)                           \
-    FUN(OP_ANDHL)                          \
-    FUN(OP_ORR)                            \
-    FUN(OP_ORN)                            \
-    FUN(OP_ORHL)                           \
-    FUN(OP_XORR)                           \
-    FUN(OP_XORN)                           \
-    FUN(OP_XORHL)                          \
-    FUN(OP_CPR)                            \
-    FUN(OP_CPN)                            \
-    FUN(OP_CPHL)                           \
-    FUN(OP_INCR)                           \
-    FUN(OP_INCHL)                          \
-    FUN(OP_DECR)                           \
-  FUN(OP_DECHL)                            \
-  FUN(OP_ADDHLSS)                          \
-  FUN(OP_ADDSPE)                           \
-  FUN(OP_INCSS)                            \
-  FUN(OP_DECSS)                            \
-  FUN(OP_RLCA)                             \
-  FUN(OP_RLA)                              \
-  FUN(OP_RRCA)                             \
-  FUN(OP_RRA)                              \
-  FUN(OP_RLCR)                             \
-  FUN(OP_RLCHL)                            \
-  FUN(OP_RLR)                              \
-  FUN(OP_RLHL)    \
-  FUN(OP_RRCR)		\
-  FUN(OP_RRCHL)		\
-  FUN(OP_RRR)		  \
-  FUN(OP_RRHL)    \
-  FUN(OP_SLAR)    \
-  FUN(OP_SLAHL)   \
-  FUN(OP_SRAR)    \
-  FUN(OP_SRARHL)  \
-  FUN(OP_SRLR)    \
-  FUN(OP_SRLHL)   \
-  FUN(OP_SWAPR)   \
-  FUN(OP_SWAPHL)  \
-  FUN(OP_BITR)    \
-  FUN(OP_BITHL)   \
-  FUN(OP_SETR)    \
-  FUN(OP_SETHL)   \
-  FUN(OP_RESR)    \
-  FUN(OP_RESHL)   \
-  FUN(OP_JPNN)    \
-  FUN(OP_JPCC)    \
-  FUN(OP_JRE)     \
-  FUN(OP_JRCC)   \
-  FUN(OP_JPHL)    \
-  FUN(OP_CALLNN)  \
-  FUN(OP_CALLCC)   \
-  FUN(OP_RETI)    \
-  FUN(OP_RET)     \
-  FUN(OP_RST)     \
-  FUN(OP_RETCC)   \
-  FUN(OP_DAA)     \
-  FUN(OP_CPL)     \
-  FUN(OP_NOP)     \
-  FUN(OP_HALT)    \
-  FUN(OP_STOP)
-
-	
-
-static const char *OperationStrings[] = {
-    MAP_OPERATIONS(GEN_STRING)
-};
-
-struct Instruction {
-    enum Operation {
-        MAP_OPERATIONS(GEN_ENUM)
-    } operation;
-    uint8_t op1, op2;\
-    uint8_t immediate;\
-    uint8_t immediate2;\
-    uint8_t bytes_used;\
-};
 
 bool is_reg(uint8_t code) {
   return (code < 8) && (code != 2) && (code != 6);
@@ -181,17 +49,19 @@ bool is_reg(uint8_t code) {
   decoded->operation = label;\
   decoded->bytes_used = len;
 
+void showInstruction(Instruction::Operation op) {
+  puts(OperationStrings[op]);
+}
 
-void decode_instruction(unsigned char *rom, Instruction *decoded) {
-  memset(decoded, 0, sizeof(Instruction));
-  uint8_t instr = select_bits(*rom, 7, 6);
-  uint8_t op1 = decoded->op1 = select_bits(*rom, 5, 3);
-  uint8_t op2 = decoded->op2 = select_bits(*rom, 2, 0);
-  decoded->operation = (Instruction::Operation)0xff;
+void decode_instruction(const RomViewBase &rom, Instruction *decoded) {
+  uint8_t byte = rom[0];
+  uint8_t instr = select_bits(byte, 7, 6);
+  uint8_t op1 = decoded->op1 = select_bits(byte, 5, 3);
+  uint8_t op2 = decoded->op2 = select_bits(byte, 2, 0);
+  decoded->operation = Instruction::OP_INVALID;
   decoded->immediate = rom[1];
   decoded->immediate2 = rom[2];
   decoded->bytes_used = 1;
-  unsigned char byte = rom[0];
   printf("i=%d\top1=%d\top2=%d\n", instr, decoded->op1, decoded->op2);
     if(byte == 0b00110110) {
       decoded->operation = Instruction::OP_LDHLN;
@@ -222,13 +92,13 @@ void decode_instruction(unsigned char *rom, Instruction *decoded) {
     INSTR_REGISTER_DEF(0b10100110, Instruction::OP_ANDHL, 1)
     INSTR_REGISTER_REG2(2, 0b110, Instruction::OP_ORR, 1)
     INSTR_REGISTER_DEF(0b10110110, Instruction::OP_ORHL, 1)
-    INSTR_REGISTER_REG2(2, 5, Instruction::OP_XORR)
+    INSTR_REGISTER_REG2(2, 5, Instruction::OP_XORR, 1)
     INSTR_REGISTER_DEF(0b10101110, Instruction::OP_XORHL, 1)
     INSTR_REGISTER_REG2(2, 7, Instruction::OP_CPR, 1)
     INSTR_REGISTER_DEF(0b10111110, Instruction::OP_CPHL, 1)
     INSTR_REGISTER_REG2(2, 0, Instruction::OP_ADDAR, 1)
     INSTR_REGISTER_DEF(0b10000110,Instruction::OP_ADDAHL, 1)
-    INSTR_REGISTER_REG2(2, 1, OP_ADCAR)
+    INSTR_REGISTER_REG2(2, 1, Instruction::OP_ADCAR, 1)
     INSTR_REGISTER_DEF(0b10001110, Instruction::OP_ADCAHL, 1)
     INSTR_REGISTER_DEF(0b11110010, Instruction::OP_LDAC, 1)
     INSTR_REGISTER_DEF(0b11100010, Instruction::OP_LDCA, 1)
@@ -355,9 +225,9 @@ void decode_instruction(unsigned char *rom, Instruction *decoded) {
       }
     } else if(byte == 0b11011011) {
       unsigned char byte = rom[1];
-      uint8_t instr = select_bits(*rom, 7, 6);
-      uint8_t op1 = select_bits(*rom, 5, 3);
-      uint8_t op2 = select_bits(*rom, 2, 0);
+      uint8_t instr = select_bits(byte, 7, 6);
+      uint8_t op1 = select_bits(byte, 5, 3);
+      uint8_t op2 = select_bits(byte, 2, 0);
       if(byte == 0b00011110) {
         decoded->operation = Instruction::OP_RRHL;
         decoded->bytes_used = 2;

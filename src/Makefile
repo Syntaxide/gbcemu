@@ -1,5 +1,10 @@
 all:
-	gcc main.cc -o emu
+	g++ main.cc rom.cc inst_decode.cc cpu.cc -g --std=c++11 -o emu
 
-test:
-	for i in *_test.cc; do echo "making $$i";rm a.out;g++ --std=c++11 $$i; ./a.out; done
+test_decoder :
+	g++ inst_decode_test.cc inst_decode.cc -g --std=c++11;
+	./a.out
+
+test : test_decoder
+	echo done
+

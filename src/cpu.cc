@@ -1,58 +1,43 @@
+#include "cpu.h"
+
 #include <stdint.h>
+#include "inst_decode.h"
+#include "rom.h"
 
-enum special_mem_names {
-  reg_p1 = 0, //ff00 - io ports
-  reg_sb, //ff01
-  reg_sc, //ff02
-  reg_div, //ff04
-  reg_tima, //FF05
-  reg_tma, //FF06
-  reg_tac, //ff07
-  reg_if, //ff0f
-  reg_lcdc, //ff40 - lcd control
-  reg_stat, //ff41 - lcd status
-  reg_scy, //ff42 - scroll y
-  reg_scx, //ff43 - scroll x
-  reg_ly, //ff44 - lcdc y coord. 0-153=draw, 144-153=blanking
-  reg_lyc, //ff45 - ly compare
-  reg_wy, //ff4a -  window y
-  reg_wx, //ff4b - window x
-  reg_key1, //ff4d - 
-  reg_rp, //ff56 - infrared
-  reg_bcps, //ff68 - bg write
-  reg_bcpd, //ff69 - bg write data
-  reg_ocps, //ff6a - obj write
-  reg_ocpd, //ff6b - obj write data
-  reg_ie, //ffff
-  reg_wy,
-  reg_w,
-  reg_stack,
-  SPECIAL_MEM_COUNT
-};
+CPU::CPU(Rom &rom) {
+  this->mRom = &rom;
+  reset();
+}
 
-enum registers {
-  reg_a = 0,
-  reg_b,
-  reg_c,
-  reg_d,
-  reg_e,
-  reg_f,
-  reg_h,
-  reg_l,
-  reg_pc,
-  reg_sp,
-  reg_flags,
-};
+void CPU::reset() {
+  pc = 0;
+}
 
-enum CPU_Speed {
-  SPEED_NORMAL = 0, //1.05 Mhz
-  SPEED_DOUBLE, //2.10 Mhz
-};
+bool jumpInstruction(const Instruction &instr) {
+  return false;
+}
 
-class CPU {
-public:
-private:
+void CPU::step() {
+  printf("PC: %x\n", pc);
+  RomView nearPC(*mRom, pc);
+  Instruction instr;
+  decode_instruction(nearPC, &instr);
+  showInstruction(instr.operation);
+  if(instr.operation == Instruction::OP_INVALID) {
+    puts("exiting due to bad instruction");
+    exit(-1);
+  }
 
-  uint8_t registers[NUM_REGISTERS];
-  CPU_Speed speed;
-};
+  switch(instr.operation) {
+    case Instruction::OP_JPNN:
+      pc = instr.immediate + (instr.immediate2 << 8);
+      return;
+      break;
+    default:
+     printf("instruction not yet supported: %s\n", OperationStrings[instr.operation]);
+  } 
+
+
+  pc += instr.bytes_used;
+}
+

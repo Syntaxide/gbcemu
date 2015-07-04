@@ -1,4 +1,5 @@
-#include "inst_decode.cc"
+#include "inst_decode.h"
+#include "rom.h"
 
 #include <stdio.h>
 #include <iostream>
@@ -14,6 +15,19 @@
   }\
   }
 #define TEST_EQ(a, b) TEST_EQ2(a,b, __LINE__)
+
+class RomViewArr : public RomViewBase {
+  public:
+    RomViewArr(uint8_t *ptr) {
+      mArr = ptr;
+    }
+    uint8_t operator[](long index) const{
+      return mArr[index];
+    }
+
+   private:
+    uint8_t *mArr;
+};
 
 void test_select() {
   TEST_CATEGORY("instruction decoding");
@@ -33,8 +47,9 @@ void check_instr(uint8_t rom1, Instruction::Operation op, char bytes_expected, i
   rom[0] = rom1;
   rom[1] = 123;
   rom[2] = 213;
+  RomViewArr romView(rom);
   printf("checking operation %s\n", OperationStrings[op]);
-  decode_instruction(rom, &instruction);
+  decode_instruction(romView, &instruction);
   TEST_EQ2(instruction.operation, op, line);
   TEST_EQ2(instruction.bytes_used, bytes_expected, line);
 }
@@ -45,8 +60,9 @@ void check_instr2(uint8_t rom1, uint8_t rom2, Instruction::Operation op, char by
   rom[0] = rom1;
   rom[1] = rom2;
   rom[2] = 213;
+  RomViewArr romView(rom);
   printf("checking operation %s\n", OperationStrings[op]);
-  decode_instruction(rom, &instruction);
+  decode_instruction(romView, &instruction);
   TEST_EQ2(instruction.operation, op, line);
   TEST_EQ2(instruction.bytes_used, bytes_expected, line);
 }
@@ -55,10 +71,11 @@ void test_instr_decode() {
   TEST_CATEGORY("testing ld instructions");
   Instruction instruction;
   unsigned char rom[2] = {0, 0};
+  RomViewArr view(rom);
 
   // LD R(a) R(B)
   rom[0] = 0b01111000;
-  decode_instruction(rom, &instruction);
+  decode_instruction(view, &instruction);
   TEST_EQ(instruction.operation, Instruction::OP_LDRR);
   TEST_EQ(instruction.op1, 7);
   TEST_EQ(instruction.op2, 0);
@@ -67,7 +84,7 @@ void test_instr_decode() {
   // LD R(a), N
   rom[0] = 0b00111110;
   rom[1] = 238;
-  decode_instruction(rom, &instruction);
+  decode_instruction(view, &instruction);
   TEST_EQ(instruction.operation, Instruction::OP_LDRN);
   TEST_EQ(instruction.op1, 7);
   TEST_EQ(instruction.immediate, 238);
@@ -75,14 +92,14 @@ void test_instr_decode() {
 
   // LD R(B), (HL)
   rom[0] = 0b01001110;
-  decode_instruction(rom, &instruction);
+  decode_instruction(view, &instruction);
   TEST_EQ(instruction.operation, Instruction::OP_LDRHL);
   TEST_EQ(instruction.op1, 1);
   TEST_EQ(instruction.bytes_used, 1);
 
   // LD (HL), R
   rom[0] = 0b01110001;
-  decode_instruction(rom, &instruction);
+  decode_instruction(view, &instruction);
   TEST_EQ(instruction.operation, Instruction::OP_LDHLR);
   TEST_EQ(instruction.op2, 1);
   TEST_EQ(instruction.bytes_used, 1);
@@ -90,39 +107,39 @@ void test_instr_decode() {
   // LD (HL), N(238)
   rom[0] = 0b00110110;
   rom[1] = 238;
-  decode_instruction(rom, &instruction);
+  decode_instruction(view, &instruction);
   TEST_EQ(instruction.operation, Instruction::OP_LDHLN);
   TEST_EQ(instruction.immediate, 238);
   TEST_EQ(instruction.bytes_used, 2);
 
   // LD A, BC
   rom[0] = 0b00001010;
-  decode_instruction(rom, &instruction);
+  decode_instruction(view, &instruction);
   TEST_EQ(instruction.operation, Instruction::OP_LDABC);
   TEST_EQ(instruction.bytes_used, 1);
 
   // LD A, DE
   rom[0] = 0b00011010;
-  decode_instruction(rom, &instruction);
+  decode_instruction(view, &instruction);
   TEST_EQ(instruction.operation, Instruction::OP_LDADE);
   TEST_EQ(instruction.bytes_used, 1);
 
   // LD A, (C)
   rom[0] = 0b11110010;
-  decode_instruction(rom, &instruction);
+  decode_instruction(view, &instruction);
   TEST_EQ(instruction.operation, Instruction::OP_LDAC);
   TEST_EQ(instruction.bytes_used, 1);
 
   // LD (C), A
   rom[0] = 0b11100010;
-  decode_instruction(rom, &instruction);
+  decode_instruction(view, &instruction);
   TEST_EQ(instruction.operation, Instruction::OP_LDCA);
   TEST_EQ(instruction.bytes_used, 1);
 
   // LD A, (N)
   rom[0] = 0b11110000;
   rom[1] = 128;
-  decode_instruction(rom, &instruction);
+  decode_instruction(view, &instruction);
   TEST_EQ(instruction.operation, Instruction::OP_LDAN);
   TEST_EQ(instruction.immediate, 128);
   TEST_EQ(instruction.bytes_used, 2);
@@ -130,7 +147,7 @@ void test_instr_decode() {
   // LD (N), A
   rom[0] = 0b11100000;
   rom[1] = 210;
-  decode_instruction(rom, &instruction);
+  decode_instruction(view, &instruction);
   TEST_EQ(instruction.operation, Instruction::OP_LDNA);
   TEST_EQ(instruction.immediate, 210);
   TEST_EQ(instruction.bytes_used, 2);
@@ -139,7 +156,7 @@ void test_instr_decode() {
   rom[0] = 0b11111010;
   rom[1] = 210;
   rom[2] = 56;
-  decode_instruction(rom, &instruction);
+  decode_instruction(view, &instruction);
   TEST_EQ(instruction.operation, Instruction::OP_LDANN);
   TEST_EQ(instruction.immediate, 210);
   TEST_EQ(instruction.immediate2, 56);
@@ -149,7 +166,7 @@ void test_instr_decode() {
   rom[0] = 0b11101010;
   rom[1] = 123;
   rom[2] = 231;
-  decode_instruction(rom, &instruction);
+  decode_instruction(view, &instruction);
   TEST_EQ(instruction.operation, Instruction::OP_LDNNA);
   TEST_EQ(instruction.immediate, 123);
   TEST_EQ(instruction.immediate2, 231);
