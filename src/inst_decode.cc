@@ -49,7 +49,7 @@ bool is_reg(uint8_t code) {
   decoded->operation = label;\
   decoded->bytes_used = len;
 
-void showInstruction(Instruction::Operation op) {
+void showOperation(Instruction::Operation op) {
   puts(OperationStrings[op]);
 }
 

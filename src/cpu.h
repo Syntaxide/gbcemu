@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "inst_decode.h"
 #include "rom.h"
+#include "memory.h"
 
 enum reg_addrs {
   reg_p1  = 0xff00,
@@ -50,14 +51,41 @@ enum CPU_Speed {
 
 class CPU {
 public:
+  CPU();
   CPU(Rom &rom);
   void reset();
     
   void step();
-private:
+  void execute(const Instruction &instr);
 
-  uint8_t a, b, c, d, e, f, g, h, l, flags;
+  uint8_t a, b, c, d, e, f, g, h, l;
+  uint8_t flag_z, flag_h, flag_n, flag_cy;
   uint16_t pc, sp;
+
+  // sets carry flags appropriately
+  uint8_t alu_add8(uint8_t first, uint8_t second, uint8_t c);
+  uint8_t alu_sub8(uint8_t first, uint8_t second, uint8_t c);
+  uint8_t alu_and8(uint8_t first, uint8_t second);
+  uint8_t alu_or8(uint8_t first, uint8_t second);
+  Memory mem;
+  // get value of pairs
+  uint16_t BC() const;
+  uint16_t DE() const;
+  uint16_t HL() const;
+  uint16_t AF() const;
+  uint16_t SP() const;
+  void setBC(uint16_t val);
+  void setDE(uint16_t val);
+  void setHL(uint16_t val);
+  void setAF(uint16_t val);
+  void setSP(uint16_t val);
+  void setRegPair(uint8_t code, uint16_t value);
+  uint16_t readRegPair(uint8_t code) const;
+private:
+  // takes a reg code, returns a reference to the member.
+  // useful so that reg(0b111) = a;
+  uint8_t *reg(uint8_t code);
+
   Rom *mRom;
   CPU_Speed speed;
   Instruction instruction;

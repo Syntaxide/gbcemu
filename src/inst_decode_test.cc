@@ -3,18 +3,7 @@
 
 #include <stdio.h>
 #include <iostream>
-
-#define TEST_CATEGORY(name) puts(name)
-#define TEST_EQ2(a, b, c) {                        \
-  auto t1 = a;\
-  auto t2 = b;\
-  if(t1 == t2){\
-    printf("OK\n");\
-  }else{\
-    printf("FAIL\t%d != %d at %d " #b "\n", t1, t2, c);  \
-  }\
-  }
-#define TEST_EQ(a, b) TEST_EQ2(a,b, __LINE__)
+#include "testlib.h"
 
 class RomViewArr : public RomViewBase {
   public:

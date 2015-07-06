@@ -40,14 +40,12 @@ enum reg_encoding {
   FUN(OP_LDDEA)                              \
   FUN(OP_LDHLIA)                             \
   FUN(OP_LDHLDA)                           \
-  /* 16 bit transfer (p90)*/               \
   FUN(OP_LDDDNN)                        \
   FUN(OP_LDSPHL)                        \
   FUN(OP_PUSHQQ)                        \
   FUN(OP_POPQQ)                         \
   FUN(OP_LDHLSP)                        \
   FUN(OP_LDNNSP)                         \
-  /* 8bit arith logical (p92)*/          \
   FUN(OP_ADDAR)                          \
   FUN(OP_ADDAN)                          \
   FUN(OP_ADDAHL)                         \
@@ -137,6 +135,6 @@ struct Instruction {
     uint8_t bytes_used;\
 };
 
-void showInstruction(Instruction::Operation op);
+void showOperation(Instruction::Operation op);
 
 void decode_instruction(const RomViewBase &rom, Instruction *decoded);
