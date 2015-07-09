@@ -1,4 +1,6 @@
 #include "memory.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 Memory::Memory() {
@@ -15,16 +17,23 @@ uint8_t Memory::read8(int address) {
   if(address >=0 && address < size) {
     return memory[address];
   }
-  return 0;
+  puts("attempted read to memory out of bounds");
+  exit(-1);
 }
 uint16_t Memory::read16(int address) {
-  return 0;
+  puts("not implemented");
+  exit(-1);
 }
 
 void Memory::write8(int address, uint8_t value) {
   if(address >=0 && address < size) {
     memory[address] = value;
+  } else {
+    puts("attempted to write to out of bounds memory");
+    exit(-1);
   }
 }
 void Memory::write16(int address, uint16_t value) {
+  puts("not implemented");
+  exit(-1);
 }

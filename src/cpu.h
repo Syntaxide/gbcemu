@@ -67,6 +67,10 @@ public:
   uint8_t alu_sub8(uint8_t first, uint8_t second, uint8_t c);
   uint8_t alu_and8(uint8_t first, uint8_t second);
   uint8_t alu_or8(uint8_t first, uint8_t second);
+  uint8_t alu_xor8(uint8_t first, uint8_t second);
+  void alu_cp8(uint8_t first, uint8_t second);
+  uint8_t alu_inc8(uint8_t val);
+  uint8_t alu_dec8(uint8_t val);
   Memory mem;
   // get value of pairs
   uint16_t BC() const;
@@ -79,8 +83,10 @@ public:
   void setHL(uint16_t val);
   void setAF(uint16_t val);
   void setSP(uint16_t val);
-  void setRegPair(uint8_t code, uint16_t value);
-  uint16_t readRegPair(uint8_t code) const;
+  void setDDPair(uint8_t code, uint16_t value);
+  uint16_t readDDPair(uint8_t code) const;
+  void setQQPair(uint8_t code, uint16_t value);
+  uint16_t readQQPair(uint8_t code) const;
 private:
   // takes a reg code, returns a reference to the member.
   // useful so that reg(0b111) = a;

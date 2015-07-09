@@ -5,13 +5,15 @@
 #include <string.h>
 
 #include "rom.h"
+
+uint8_t select_bits(uint8_t in, char start, char end);
 enum reg_encoding {
   REG_b = 0,
   REG_c = 1,
-  REG_2 = 2,
+  REG_d = 2,
   REG_e = 3,
   REG_h = 4,
-  REG_d = 5,
+  REG_l = 5,
   REG_6 = 6,
   REG_a = 7
 };

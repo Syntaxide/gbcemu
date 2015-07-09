@@ -234,6 +234,4 @@ void decode_instruction(const RomViewBase &rom, Instruction *decoded) {
       }
       INSTR_REGISTER_DEF(0b00100110, Instruction::OP_SLAHL, 2)
     }
-
-
 }

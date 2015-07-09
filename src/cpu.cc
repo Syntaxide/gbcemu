@@ -76,7 +76,7 @@ void CPU::setAF(uint16_t value) {
 void CPU::setSP(uint16_t value) {
   pc = value;
 }
-void CPU::setRegPair(uint8_t code, uint16_t value) {
+void CPU::setDDPair(uint8_t code, uint16_t value) {
   switch(code) {
     case 0: setBC(value); break;
     case 1: setDE(value); break;
@@ -87,13 +87,35 @@ void CPU::setRegPair(uint8_t code, uint16_t value) {
             exit(-1);
   }
 }
+uint16_t CPU::readDDPair(uint8_t code) const {
+  switch(code) {
+    case 0: return BC(); break;
+    case 1: return DE(); break;
+    case 2: return HL(); break;
+    case 3: return SP(); break;
+    default:puts("READ: INVALID DD CODE");
+            exit(-1);
+  }
+}
 
-uint16_t CPU::readRegPair(uint8_t code) const {
+void CPU::setQQPair(uint8_t code, uint16_t value) {
+  switch(code) {
+    case 0: setBC(value); break;
+    case 1: setDE(value); break;
+    case 2: setHL(value); break;
+    case 3: setAF(value); break;
+    default:puts("SET: INVALID QQ CODE!");
+            exit(-1);
+  }
+}
+uint16_t CPU::readQQPair(uint8_t code) const {
   switch(code) {
     case 0: return BC(); break;
     case 1: return DE(); break;
     case 2: return HL(); break;
     case 3: return AF(); break;
+    default:puts("READ: INVALID QQ CODE!");
+            exit(-1);
   }
 }
 
@@ -159,21 +181,23 @@ void CPU::execute(const Instruction& instr) {
       setHL(HL() - 1);
       break;
     case Instruction::OP_LDDDNN:
-      setRegPair(instr.op1>>1, to16(instr.immediate, instr.immediate2));
+      setDDPair(instr.op1>>1, to16(instr.immediate, instr.immediate2));
       break;
     case Instruction::OP_LDSPHL:
       setHL(SP());
       break;
     case Instruction::OP_PUSHQQ:
       {
-      uint16_t pair = readRegPair(instr.op1>>1);
+      uint16_t pair = readQQPair(instr.op1>>1);
       mem.write8(sp-1, pair>>8);
       mem.write8(sp-2, pair & 0xff);
       }
       break;
     case Instruction::OP_POPQQ:
       {
-      uint16_t pair = (mem.read8(sp) <<8) + mem.read8(sp+1);
+        puts("popqq running");
+      uint16_t val = mem.read8(sp) + (mem.read8(sp+1)<<8);
+      setQQPair(instr.op1>>1, val);
       sp = sp+2;
       }
       break;
@@ -233,30 +257,49 @@ void CPU::execute(const Instruction& instr) {
       a = alu_and8(a, mem.read8(HL()));
       break;
     case Instruction::OP_ORR:
+      a = alu_or8(a, *reg(instr.op2));
       break;
     case Instruction::OP_ORN:
+      a = alu_or8(a, instr.immediate);
       break;
     case Instruction::OP_ORHL:
+      a = alu_or8(a, mem.read8(HL()));
       break;
     case Instruction::OP_XORR:
+      a = alu_xor8(a, *reg(instr.op2));
       break;
     case Instruction::OP_XORN:
+      a = alu_xor8(a, instr.immediate);
       break;
     case Instruction::OP_XORHL:
+      a = alu_xor8(a, mem.read8(HL()));
       break;
     case Instruction::OP_CPR:
+      alu_cp8(a, *reg(instr.op2));
       break;
     case Instruction::OP_CPN:
+      alu_cp8(a, instr.immediate);
       break;
     case Instruction::OP_CPHL:
+      alu_xor8(a, mem.read8(HL()));
       break;
     case Instruction::OP_INCR:
+      *reg(instr.op1) = alu_inc8(*reg(instr.op1));
       break;
     case Instruction::OP_INCHL:
+      {
+      uint8_t next = alu_inc8(mem.read8(HL()));
+      mem.write8(HL(), next);
+      }
       break;
     case Instruction::OP_DECR:
+      *reg(instr.op1) = alu_dec8(*reg(instr.op1));
       break;
     case Instruction::OP_DECHL:
+      {
+      uint8_t next = alu_dec8(mem.read8(HL()));
+      mem.write8(HL(), next);
+      }
       break;
     case Instruction::OP_ADDHLSS:
       break;
@@ -385,7 +428,41 @@ uint8_t CPU::alu_and8(uint8_t first, uint8_t second) {
   return res;
 }
 
+uint8_t CPU::alu_or8(uint8_t first, uint8_t second) {
+  uint8_t res = first | second;
+  flag_h = 0;
+  flag_cy = 0;
+  flag_z = (res == 0);
+  flag_n = 0;
+  return res;
+}
+uint8_t CPU::alu_xor8(uint8_t first, uint8_t second) {
+  uint8_t res = first ^ second;
+  flag_h = 0;
+  flag_cy = 0;
+  flag_z = (res == 0);
+  flag_n = 0;
+  return res;
+}
+void CPU::alu_cp8(uint8_t first, uint8_t second) {
+  alu_sub8(first, second, 0);
+}
 
+uint8_t CPU::alu_inc8(uint8_t val) {
+  val = val + 1;
+  flag_z = (val == 0);
+  flag_n = 0;
+  flag_h = (val&0xf0) != ((val-1)&0xf0);
+  return val;
+}
+
+uint8_t CPU::alu_dec8(uint8_t val) {
+  val = val - 1;
+  flag_z = (val == 0);
+  flag_n = 1;
+  flag_h = (val&0xf0) != ((val+1)&0xf0);
+  return val;
+}
 
 void CPU::step() {
   printf("PC: %x\n", pc);
