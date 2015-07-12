@@ -2,6 +2,20 @@
 #include "cpu.h"
 #include "inst_decode.h"
 
+void cpu_info(const CPU &cpu) {
+  printf("CPU INFO:\n");
+  printf("A:%x\tF:%x\tAF:%x\n", cpu.a, cpu.f, cpu.AF());
+  printf("B:%x\tC:%x\tBC:%x\n", cpu.b, cpu.c, cpu.BC());
+  printf("D:%x\tE:%x\tDE:%x\n", cpu.d, cpu.e, cpu.DE());
+  printf("H:%x\tL:%x\tHL:%x\n", cpu.h, cpu.l, cpu.HL());
+  printf("\nSP:%x\n", cpu.SP());
+
+  for(int i=0;i<4;i++) {
+    if(cpu.SP()-2 + i > 0xffff) break;
+    printf("(%x)->\t%x\n", cpu.SP()-2+i, cpu.mem.read8(cpu.SP()-2+i));
+  }
+}
+
 void test_add() {
   TEST_CATEGORY("testing add");
    //page 92
@@ -426,6 +440,23 @@ void test_dec() {
 }
 
 void test_pushpop() {
+  { // push bc
+    TEST_CATEGORY("test pushpop");
+    CPU cpu;
+    Instruction instr;
+    cpu.setSP(0xfffc);
+    cpu.setBC(0xdead);
+    instr.operation = Instruction::OP_PUSHQQ;
+    instr.op1 = 0b000;  //bc
+    cpu.execute(instr);
+
+    instr.operation = Instruction::OP_POPQQ;
+    instr.op1 = 0b010;  //de
+    cpu.execute(instr);
+
+    TEST_EQ(cpu.DE(), 0xdead);
+  }
+
   { //pop bc
     TEST_CATEGORY("test popqq");
     CPU cpu;
@@ -465,7 +496,7 @@ void test_add16() {
     Instruction instr;
     cpu.setHL(0x8a23);
     instr.operation = Instruction::OP_ADDHLSS;
-    instr.op1 = 0b010; 
+    instr.op1 = 0b101; 
     cpu.execute(instr);
 
     TEST_EQ(cpu.HL(), 0x1446);

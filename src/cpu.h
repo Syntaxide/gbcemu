@@ -64,6 +64,7 @@ public:
 
   // sets carry flags appropriately
   uint8_t alu_add8(uint8_t first, uint8_t second, uint8_t c);
+  uint16_t alu_add16(uint16_t first, uint16_t second, uint8_t c);
   uint8_t alu_sub8(uint8_t first, uint8_t second, uint8_t c);
   uint8_t alu_and8(uint8_t first, uint8_t second);
   uint8_t alu_or8(uint8_t first, uint8_t second);

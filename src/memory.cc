@@ -13,7 +13,7 @@ Memory::~Memory() {
   delete[] memory;
 }
 
-uint8_t Memory::read8(int address) {
+uint8_t Memory::read8(int address) const {
   if(address >=0 && address < size) {
     return memory[address];
   }
@@ -26,6 +26,7 @@ uint16_t Memory::read16(int address) {
 }
 
 void Memory::write8(int address, uint8_t value) {
+  printf("write8(%x, %x)\n", address, value);
   if(address >=0 && address < size) {
     memory[address] = value;
   } else {

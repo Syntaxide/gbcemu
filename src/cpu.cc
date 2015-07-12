@@ -14,7 +14,7 @@ CPU::CPU(Rom &rom) {
 
 void CPU::reset() {
   pc = 0x100;
-  a = b = c = d = e = f = 0;
+  a = b = c = d = e = f = h = l = 0;
   sp = 0xfffe;
   flag_z = flag_h = flag_cy = 0;
 }
@@ -23,6 +23,17 @@ void CPU::reset() {
 // currently assumes that the cpu is little endian
 uint16_t to16(uint8_t first, uint8_t second) {
   return first + (second << 8);
+}
+
+void from16(uint16_t val, uint8_t *msb, uint8_t *lsb) {
+  *msb = (val>>8);
+  *lsb = (val&0xff);
+}
+
+uint8_t isCarrySum(uint8_t fromBit, int first, int second) {
+  int lowerMask = (2<<fromBit) -1;
+  bool c = ((first&lowerMask) + (second&lowerMask)) & (1 << (fromBit+1));
+  return c;
 }
 
 bool jumpInstruction(const Instruction &instr) {
@@ -51,30 +62,26 @@ uint8_t *CPU::reg(uint8_t code) {
   exit(-1);
 }
 
-uint16_t CPU::BC() const { return (c<<8) + b; }
-uint16_t CPU::DE() const { return (e<<8) + d; }
-uint16_t CPU::HL() const { return (l<<8) + h; }
-uint16_t CPU::AF() const { return (f<<8) + a; }
+uint16_t CPU::BC() const { return (b<<8) + c; }
+uint16_t CPU::DE() const { return (d<<8) + e; }
+uint16_t CPU::HL() const { return (h<<8) + l; }
+uint16_t CPU::AF() const { return (a<<8) + f; }
 uint16_t CPU::SP() const { return sp; }
 
 void CPU::setBC(uint16_t value) {
-  b = value & 0xff;
-  c = (value & 0xff00) >> 8;
+  from16(value, &b, &c);
 }
 void CPU::setDE(uint16_t value) {
-  d = value & 0xff;
-  e = (value & 0xff00) >> 8;
+  from16(value, &d, &e);
 }
 void CPU::setHL(uint16_t value) {
-  h = value & 0xff;
-  l = (value & 0xff00) >> 8;
+  from16(value, &h, &l);
 }
 void CPU::setAF(uint16_t value) {
-  a = value & 0xff;
-  f = (value & 0xff00) >> 8;
+  from16(value, &a, &f);
 }
 void CPU::setSP(uint16_t value) {
-  pc = value;
+  sp = value;
 }
 void CPU::setDDPair(uint8_t code, uint16_t value) {
   switch(code) {
@@ -189,14 +196,16 @@ void CPU::execute(const Instruction& instr) {
     case Instruction::OP_PUSHQQ:
       {
       uint16_t pair = readQQPair(instr.op1>>1);
+      printf("writing value: %x to memory\n", pair);
       mem.write8(sp-1, pair>>8);
       mem.write8(sp-2, pair & 0xff);
+      sp -= 2;
       }
       break;
     case Instruction::OP_POPQQ:
       {
         puts("popqq running");
-      uint16_t val = mem.read8(sp) + (mem.read8(sp+1)<<8);
+      uint16_t val = to16(mem.read8(sp), mem.read8(sp+1));
       setQQPair(instr.op1>>1, val);
       sp = sp+2;
       }
@@ -302,6 +311,7 @@ void CPU::execute(const Instruction& instr) {
       }
       break;
     case Instruction::OP_ADDHLSS:
+      setHL(alu_add16(HL(), readDDPair(instr.op1>>1), 0));
       break;
     case Instruction::OP_ADDSPE:
       break;
@@ -411,6 +421,13 @@ uint8_t CPU::alu_add8(uint8_t first, uint8_t second, uint8_t c) {
   return sum;
 }
 
+uint16_t CPU::alu_add16(uint16_t first, uint16_t second, uint8_t c) {
+  uint16_t sum = first + second;
+  flag_h = isCarrySum(11, first, second);
+  flag_cy = isCarrySum(15, first, second);
+  flag_n = 0;
+  return sum;
+}
 uint8_t CPU::alu_sub8(uint8_t first, uint8_t second, uint8_t c) {
   uint8_t diff = first - c - second;
   flag_h = ((first&0x0f) -c - (second&0x0f)) != (diff&0x0f);  //carry to lower nibble
