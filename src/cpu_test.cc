@@ -504,6 +504,340 @@ void test_add16() {
     TEST_EQ(cpu.flag_n, 0);
     TEST_EQ(cpu.flag_cy, 1);
   }
+
+  { // add SP, e
+    CPU cpu;
+    Instruction instr;
+    instr.operation = Instruction::OP_ADDSPE;
+    instr.immediate = 0x02;
+    cpu.setSP(0xfff8);
+    cpu.execute(instr);
+
+    TEST_EQ(cpu.SP(), 0xfffa);
+    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.flag_h, 0);
+    TEST_EQ(cpu.flag_n, 0);
+    TEST_EQ(cpu.flag_z, 0);
+  }
+}
+
+void test_incdecs() {
+  TEST_CATEGORY("inc / dec ss");
+  { // inc DE
+    CPU cpu;
+    Instruction instr;
+    instr.op1 = 0b10;  // DE
+    instr.operation = Instruction::OP_INCSS;
+    cpu.setDE(0x235F);
+    cpu.execute(instr);
+
+    TEST_EQ(cpu.DE(), 0x2360);
+
+    instr.operation = Instruction::OP_DECSS;
+    cpu.execute(instr);
+    
+    TEST_EQ(cpu.DE(), 0x235F);
+  }
+}
+
+void test_rotates() {
+  TEST_CATEGORY("testing rotates");
+  { // RLCA
+    TEST_CATEGORY("rlca");
+    CPU cpu;
+    Instruction instr;
+    cpu.a = 0x85;
+    cpu.flag_cy = 0;
+    instr.operation = Instruction::OP_RLCA;
+    cpu.execute(instr);
+
+    TEST_EQ(cpu.a, 0x0b);
+    TEST_EQ(cpu.flag_cy, 1);
+    TEST_EQ(cpu.flag_z, 0);
+    TEST_EQ(cpu.flag_h, 0);
+    TEST_EQ(cpu.flag_n, 0);
+  }
+
+  { // RLA
+    TEST_CATEGORY("rla");
+    CPU cpu;
+    Instruction instr;
+    cpu.a = 0x95;
+    cpu.flag_cy = 1;
+    instr.operation = Instruction::OP_RLA;
+    cpu.execute(instr);
+
+    TEST_EQ(cpu.a, 0x2b);
+    TEST_EQ(cpu.flag_cy, 1);
+    TEST_EQ(cpu.flag_z, 0);
+    TEST_EQ(cpu.flag_h, 0);
+    TEST_EQ(cpu.flag_n, 0);
+  }
+
+  { // RRCA
+    TEST_CATEGORY("rra");
+    CPU cpu;
+    Instruction instr;
+    instr.operation = Instruction::OP_RRCA;
+    cpu.a = 0x3b;
+    cpu.flag_cy = 0;
+    cpu.execute(instr);
+
+    TEST_EQ(cpu.a, 0x9d);
+    TEST_EQ(cpu.flag_cy, 1);
+    TEST_EQ(cpu.flag_z, 0);
+    TEST_EQ(cpu.flag_h, 0);
+    TEST_EQ(cpu.flag_n, 0);
+  }
+
+  { // RRA
+    TEST_CATEGORY("rra");
+    CPU cpu;
+    Instruction instr;
+    instr.operation = Instruction::OP_RRA;
+    cpu.a = 0x81;
+    cpu.flag_cy = 0;
+    cpu.execute(instr);
+
+    TEST_EQ(cpu.a, 0x40);
+    TEST_EQ(cpu.flag_cy, 1);
+    TEST_EQ(cpu.flag_z, 0);
+    TEST_EQ(cpu.flag_h, 0);
+    TEST_EQ(cpu.flag_n, 0);
+  }
+
+  { 
+    TEST_CATEGORY("rlcr");
+    CPU cpu;
+    Instruction instr;
+    instr.operation = Instruction::OP_RLCR;
+    instr.immediate = REG_b;
+    cpu.b = 0x85;
+    cpu.flag_cy = 0;
+    cpu.execute(instr);
+
+    TEST_EQ(cpu.b, 0x0b);
+    TEST_EQ(cpu.flag_cy, 1);
+    TEST_EQ(cpu.flag_z, 0);
+    TEST_EQ(cpu.flag_h, 0);
+    TEST_EQ(cpu.flag_n, 0);
+  }
+
+  {
+    TEST_CATEGORY("rlchl");
+    CPU cpu;
+    Instruction instr;
+    instr.operation = Instruction::OP_RLCHL;
+    cpu.setHL(0xb0b0);
+    cpu.mem.write8(0xb0b0, 0x00);
+    cpu.execute(instr);
+
+    TEST_EQ(cpu.mem.read8(cpu.HL()), 0x00);
+    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.flag_z, 1);
+    TEST_EQ(cpu.flag_h, 0);
+    TEST_EQ(cpu.flag_n, 0);
+  }
+
+  {
+    TEST_CATEGORY("rlr");
+    CPU cpu;
+    Instruction instr;
+    instr.operation = Instruction::OP_RLR;
+    instr.immediate = REG_l;
+    cpu.l = 0x80;
+    cpu.execute(instr);
+
+    TEST_EQ(cpu.l, 0x00);
+    TEST_EQ(cpu.flag_cy, 1);
+    TEST_EQ(cpu.flag_z, 1);
+    TEST_EQ(cpu.flag_h, 0);
+    TEST_EQ(cpu.flag_n, 0);
+  }
+
+  {
+    TEST_CATEGORY("rlhl");
+    CPU cpu;
+    Instruction instr;
+    instr.operation = Instruction::OP_RLHL;
+    cpu.setHL(0xbabe);
+    cpu.mem.write8(0xbabe, 0x11);
+    cpu.execute(instr);
+
+    TEST_EQ(cpu.mem.read8(cpu.HL()), 0x22);
+    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.flag_z, 0);
+    TEST_EQ(cpu.flag_h, 0);
+    TEST_EQ(cpu.flag_n, 0);
+  }
+
+  {
+    TEST_CATEGORY("rrcr");
+    CPU cpu;
+    Instruction instr;
+    instr.operation = Instruction::OP_RRCR;
+    instr.immediate = REG_c;
+    cpu.c = 0x1;
+    cpu.execute(instr);
+
+    TEST_EQ(cpu.c, 0x80);
+    TEST_EQ(cpu.flag_cy, 1);
+    TEST_EQ(cpu.flag_z, 0);
+    TEST_EQ(cpu.flag_h, 0);
+    TEST_EQ(cpu.flag_n, 0);
+  }
+
+  {
+    TEST_CATEGORY("rrchl");
+    CPU cpu;
+    Instruction instr;
+    instr.operation = Instruction::OP_RRCHL;
+    cpu.setHL(0xfeed);
+    cpu.mem.write8(0xfeed, 0x00);
+    cpu.flag_cy = 0;
+    cpu.execute(instr);
+
+    TEST_EQ(cpu.mem.read8(cpu.HL()), 0);
+    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.flag_z, 1);
+    TEST_EQ(cpu.flag_h, 0);
+    TEST_EQ(cpu.flag_n, 0);
+  }
+}
+
+void test_srotate() {
+  {
+    CPU cpu;
+    TEST_EQ(0x00, cpu.alu_sla(0x80));
+    TEST_EQ(cpu.flag_cy, 1);
+    TEST_EQ(cpu.flag_z, 1);
+    TEST_EQ(cpu.flag_h, 0);
+    TEST_EQ(cpu.flag_n, 0);
+  }
+  {
+    CPU cpu;
+    TEST_EQ(0xFE, cpu.alu_sla(0xFF));
+    TEST_EQ(cpu.flag_cy, 1);
+    TEST_EQ(cpu.flag_z, 0);
+    TEST_EQ(cpu.flag_h, 0);
+    TEST_EQ(cpu.flag_n, 0);
+  }
+
+  {
+    CPU cpu;
+    TEST_EQ(0xc5, cpu.alu_sra(0x8a));
+    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.flag_z, 0);
+    TEST_EQ(cpu.flag_h, 0);
+    TEST_EQ(cpu.flag_n, 0);
+  }
+  {
+    CPU cpu;
+    TEST_EQ(0x00, cpu.alu_sra(0x01));
+    TEST_EQ(cpu.flag_cy, 1);
+    TEST_EQ(cpu.flag_z, 1);
+    TEST_EQ(cpu.flag_h, 0);
+    TEST_EQ(cpu.flag_n, 0);
+  }
+
+  {
+    CPU cpu;
+    TEST_EQ(cpu.alu_srl(0x01), 0);
+    TEST_EQ(cpu.flag_cy, 1);
+    TEST_EQ(cpu.flag_z, 1);
+    TEST_EQ(cpu.flag_h, 0);
+    TEST_EQ(cpu.flag_n, 0);
+  }
+  {
+    CPU cpu;
+    TEST_EQ(cpu.alu_srl(0xff), 0x7f);
+    TEST_EQ(cpu.flag_cy, 1);
+    TEST_EQ(cpu.flag_z, 0);
+    TEST_EQ(cpu.flag_h, 0);
+    TEST_EQ(cpu.flag_n, 0);
+  }
+
+  {
+    CPU cpu;
+    TEST_EQ(cpu.alu_swap(0), 0);
+    TEST_EQ(cpu.flag_z, 1);
+    TEST_EQ(cpu.flag_h, 0);
+    TEST_EQ(cpu.flag_n, 0);
+    TEST_EQ(cpu.flag_cy, 0);
+  }
+  {
+    CPU cpu;
+    TEST_EQ(cpu.alu_swap(0xf0), 0x0f);
+    TEST_EQ(cpu.flag_z, 0);
+    TEST_EQ(cpu.flag_h, 0);
+    TEST_EQ(cpu.flag_n, 0);
+    TEST_EQ(cpu.flag_cy, 0);
+  }
+}
+
+void test_bitsetres() {
+  {
+    CPU cpu;
+    cpu.alu_bit(0x80, 7);
+    TEST_EQ(cpu.flag_z, 0);
+    TEST_EQ(cpu.flag_h, 1);
+    TEST_EQ(cpu.flag_n, 0);
+  }
+  {
+    CPU cpu;
+    cpu.alu_bit(0xef, 4);
+    TEST_EQ(cpu.flag_z, 1);
+    TEST_EQ(cpu.flag_h, 1);
+    TEST_EQ(cpu.flag_n, 0);
+  }
+  {
+    CPU cpu;
+    TEST_EQ(cpu.alu_set(0x80, 2), 0x84);
+  }
+  {
+    CPU cpu;
+    TEST_EQ(cpu.alu_set(0x3b, 7), 0xbb);
+  }
+  {
+    CPU cpu;
+    TEST_EQ(cpu.alu_set(0x0, 2), 0x4);
+  }
+  {
+    CPU cpu;
+    TEST_EQ(cpu.alu_res(0x80, 7), 0x0);
+  }
+  {
+    CPU cpu;
+    TEST_EQ(cpu.alu_res(0x3b, 1), 0x39);
+  }
+}
+
+void test_callret() {
+  {
+    CPU cpu;
+    cpu.pc = 0x8000;
+    cpu.sp = 0xfffe;
+    cpu.call(0x1234);
+    TEST_EQ(cpu.pc, 0x1234);
+    TEST_EQ(cpu.mem.read8(0xfffd), 0x80);
+    TEST_EQ(cpu.mem.read8(0xfffc), 0x03);
+    TEST_EQ(cpu.sp, 0xfffc);
+    cpu.ret();
+    TEST_EQ(cpu.pc, 0x8003);
+    TEST_EQ(cpu.sp, 0xfffe);
+  }
+
+  {
+    CPU cpu;
+    Instruction instr;
+    instr.operation = Instruction::OP_RST;
+    instr.op1 = 4;
+    cpu.execute(instr);
+    TEST_EQ(cpu.pc, 0x20);
+  }
+}
+
+void test_ret() {
 }
 int main() {
   test_add();
@@ -518,4 +852,9 @@ int main() {
   test_dec();
   test_pushpop();
   test_add16();
+  test_incdecs();
+  test_rotates();
+  test_srotate();
+  test_bitsetres();
+  test_callret();
 }

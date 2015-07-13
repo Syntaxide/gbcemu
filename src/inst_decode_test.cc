@@ -387,7 +387,7 @@ void test_instr_decode() {
 	       2);
   CHECK_INSTR2(0b11001011,
 	       0b00101110,
-	       Instruction::OP_SRARHL,
+	       Instruction::OP_SRAHL,
 	       2);
   CHECK_INSTR2(0b11001011,
 	       0b00111001,

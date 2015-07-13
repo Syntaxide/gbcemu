@@ -8,6 +8,6 @@ test_cpu:
 	g++ -std=c++11 rom.cc inst_decode.cc cpu_test.cc cpu.cc memory.cc -g
 	./a.out
 
-test : test_decoder
+test : test_decoder test_cpu
 	echo done
 

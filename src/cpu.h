@@ -72,6 +72,22 @@ public:
   void alu_cp8(uint8_t first, uint8_t second);
   uint8_t alu_inc8(uint8_t val);
   uint8_t alu_dec8(uint8_t val);
+  uint8_t alu_rr(uint8_t val);
+  uint8_t alu_rrc(uint8_t val);
+  uint8_t alu_rl(uint8_t val);
+  uint8_t alu_rlc(uint8_t val);
+  uint8_t alu_sla(uint8_t val);
+  uint8_t alu_sra(uint8_t val);
+  uint8_t alu_srl(uint8_t val);
+  uint8_t alu_swap(uint8_t val);
+  void alu_bit(uint8_t val, uint8_t bit);
+  uint8_t alu_set(uint8_t val, uint8_t bit);
+  uint8_t alu_res(uint8_t val, uint8_t bit);
+  bool jpcc(uint8_t cond);
+  void pushQQ(uint16_t value);
+  uint16_t popQQ();
+  void call(uint16_t dest);
+  void ret();
   Memory mem;
   // get value of pairs
   uint16_t BC() const;
@@ -89,6 +105,11 @@ public:
   void setQQPair(uint8_t code, uint16_t value);
   uint16_t readQQPair(uint8_t code) const;
 private:
+  /* 
+     core of execution. there are some things
+     that must be done for each instruction, so these are wrapped in execute()
+    */
+  void execute2(const Instruction &instr);
   // takes a reg code, returns a reference to the member.
   // useful so that reg(0b111) = a;
   uint8_t *reg(uint8_t code);

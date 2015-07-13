@@ -204,7 +204,7 @@ void decode_instruction(const RomViewBase &rom, Instruction *decoded) {
       INSTR_REGISTER_REG2(0, 0b011, Instruction::OP_RRR, 2)
       INSTR_REGISTER_REG2(0, 0b100, Instruction::OP_SLAR, 2)
       INSTR_REGISTER_REG2(0, 0b101, Instruction::OP_SRAR, 2)
-      INSTR_REGISTER_DEF(0b00101110, Instruction::OP_SRARHL, 2)
+      INSTR_REGISTER_DEF(0b00101110, Instruction::OP_SRAHL, 2)
       INSTR_REGISTER_REG2(0, 0b111, Instruction::OP_SRLR, 2)
       INSTR_REGISTER_DEF(0b00111110, Instruction::OP_SRLHL, 2)
       INSTR_REGISTER_REG2(0, 0b110, Instruction::OP_SWAPR, 2)

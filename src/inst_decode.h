@@ -95,7 +95,7 @@ enum reg_encoding {
   FUN(OP_SLAR)    \
   FUN(OP_SLAHL)   \
   FUN(OP_SRAR)    \
-  FUN(OP_SRARHL)  \
+  FUN(OP_SRAHL)  \
   FUN(OP_SRLR)    \
   FUN(OP_SRLHL)   \
   FUN(OP_SWAPR)   \

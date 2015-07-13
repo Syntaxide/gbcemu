@@ -36,10 +36,6 @@ uint8_t isCarrySum(uint8_t fromBit, int first, int second) {
   return c;
 }
 
-bool jumpInstruction(const Instruction &instr) {
-  return false;
-}
-
 uint8_t *CPU::reg(uint8_t code) {
   switch(code) {
   case 0b111:
@@ -89,8 +85,7 @@ void CPU::setDDPair(uint8_t code, uint16_t value) {
     case 1: setDE(value); break;
     case 2: setHL(value); break;
     case 3: setSP(value); break;
-    default:
-            printf("bad reg pair: %d\n", code);
+    default:printf("bad reg pair: %d\n", code);
             exit(-1);
   }
 }
@@ -100,7 +95,7 @@ uint16_t CPU::readDDPair(uint8_t code) const {
     case 1: return DE(); break;
     case 2: return HL(); break;
     case 3: return SP(); break;
-    default:puts("READ: INVALID DD CODE");
+    default:printf("READ: INVALID DD CODE %x\n", code);
             exit(-1);
   }
 }
@@ -111,7 +106,7 @@ void CPU::setQQPair(uint8_t code, uint16_t value) {
     case 1: setDE(value); break;
     case 2: setHL(value); break;
     case 3: setAF(value); break;
-    default:puts("SET: INVALID QQ CODE!");
+    default:printf("SET: INVALID QQ CODE! %x\n", code);
             exit(-1);
   }
 }
@@ -121,13 +116,16 @@ uint16_t CPU::readQQPair(uint8_t code) const {
     case 1: return DE(); break;
     case 2: return HL(); break;
     case 3: return AF(); break;
-    default:puts("READ: INVALID QQ CODE!");
+    default:printf("READ: INVALID QQ CODE! %x", code);
             exit(-1);
   }
 }
 
-
 void CPU::execute(const Instruction& instr) {
+  execute2(instr);
+}
+void CPU::execute2(const Instruction& instr) {
+  printf("op1: %d\n", instr.op1);
   switch(instr.operation) {
     case Instruction::OP_LDRR:
       *reg(instr.op1) = *reg(instr.op2);
@@ -158,6 +156,9 @@ void CPU::execute(const Instruction& instr) {
       break;
     case Instruction::OP_LDAN:
       a = mem.read8(0xff00 + instr.immediate);
+      break;
+    case Instruction::OP_LDNA:
+      mem.write8(0xff00 + instr.immediate, a);
       break;
     case Instruction::OP_LDANN:
       a = mem.read8(to16(instr.immediate, instr.immediate2));
@@ -196,19 +197,11 @@ void CPU::execute(const Instruction& instr) {
     case Instruction::OP_PUSHQQ:
       {
       uint16_t pair = readQQPair(instr.op1>>1);
-      printf("writing value: %x to memory\n", pair);
-      mem.write8(sp-1, pair>>8);
-      mem.write8(sp-2, pair & 0xff);
-      sp -= 2;
+      pushQQ(pair);
       }
       break;
     case Instruction::OP_POPQQ:
-      {
-        puts("popqq running");
-      uint16_t val = to16(mem.read8(sp), mem.read8(sp+1));
-      setQQPair(instr.op1>>1, val);
-      sp = sp+2;
-      }
+      setQQPair(instr.op1>>1, popQQ());
       break;
     case Instruction::OP_LDHLSP:
       setHL(sp + instr.immediate);
@@ -314,87 +307,195 @@ void CPU::execute(const Instruction& instr) {
       setHL(alu_add16(HL(), readDDPair(instr.op1>>1), 0));
       break;
     case Instruction::OP_ADDSPE:
+      sp += instr.immediate;
       break;
     case Instruction::OP_INCSS:
+      {
+      uint8_t ss = instr.op1 >> 1;
+      setDDPair(ss, readDDPair(ss) +1);
+      }
       break;
     case Instruction::OP_DECSS:
+      {
+      uint8_t ss = instr.op1 >> 1;
+      setDDPair(ss, readDDPair(ss) -1);
+      }
       break;
     case Instruction::OP_RLCA:
-      break;
+        a = alu_rlc(a);
+        break;
     case Instruction::OP_RLA:
+        a = alu_rl(a);
       break;
     case Instruction::OP_RRCA:
+      a = alu_rrc(a);
       break;
     case Instruction::OP_RRA:
+      a = alu_rr(a);
       break;
     case Instruction::OP_RLCR:
+      {
+      uint8_t *val = reg(instr.immediate);
+      *val = alu_rlc(*val);
+      }
       break;
     case Instruction::OP_RLCHL:
-      break;
+     mem.write8(HL(), alu_rlc(mem.read8(HL())));      break;
     case Instruction::OP_RLR:
+     {
+
+      uint8_t *val = reg(select_bits(instr.immediate, 2, 0));
+      *val = alu_rl(*val);
+     }
       break;
     case Instruction::OP_RLHL:
+      {
+      uint8_t val = mem.read8(HL());
+      mem.write8(HL(), alu_rl(val));
+      }
       break;
     case Instruction::OP_RRCR:
+      {
+      uint8_t *val = reg(instr.immediate);
+      *val = alu_rrc(*val);
+      }
       break;
     case Instruction::OP_RRCHL:
+      mem.write8(HL(), alu_rrc(mem.read8(HL())));
       break;
     case Instruction::OP_RRR:
+      {
+        uint8_t *val = reg(select_bits(instr.immediate, 2, 0));
+        *val = alu_rr(*val);
+      }
       break;
     case Instruction::OP_RRHL:
+      mem.write8(HL(), alu_rr(mem.read8(HL())));
       break;
     case Instruction::OP_SLAR:
+      {
+        uint8_t *val = reg(select_bits(instr.immediate, 2, 0));
+        *val = alu_sla(*val);
+      }
       break;
     case Instruction::OP_SLAHL:
+      mem.write8(HL(), alu_sla(mem.read8(HL())));
       break;
     case Instruction::OP_SRAR:
+      {
+        uint8_t *val = reg(select_bits(instr.immediate, 2, 0));
+        *val = alu_sra(*val);
+      }
       break;
-    case Instruction::OP_SRARHL:
+    case Instruction::OP_SRAHL:
+      mem.write8(HL(), alu_sra(mem.read8(HL())));
       break;
     case Instruction::OP_SRLR:
+      {
+        uint8_t *val = reg(select_bits(instr.immediate, 2, 0));
+        *val = alu_srl(*val);
+      }
       break;
     case Instruction::OP_SRLHL:
+      mem.write8(HL(), alu_srl(mem.read8(HL())));
       break;
     case Instruction::OP_SWAPR:
+      {
+        uint8_t *val = reg(select_bits(instr.immediate, 2, 0));
+        *val = alu_swap(*val);
+      }
       break;
     case Instruction::OP_SWAPHL:
+      mem.write8(HL(), alu_swap(mem.read8(HL())));
       break;
     case Instruction::OP_BITR:
+      {
+      uint8_t b = select_bits(instr.immediate, 5, 3);
+      uint8_t *val = reg(select_bits(instr.immediate, 2, 0));
+      alu_bit(*val, b);
+      }
       break;
     case Instruction::OP_BITHL:
+      {
+      uint8_t b = select_bits(instr.immediate, 5, 3);
+      alu_bit(mem.read8(HL()), b);
+      }
       break;
     case Instruction::OP_SETR:
+      {
+      uint8_t b = select_bits(instr.immediate, 5, 3);
+      uint8_t *val = reg(select_bits(instr.immediate, 2, 0));
+      *val = alu_set(*val, b);
+      }
       break;
     case Instruction::OP_SETHL:
+      {
+      uint8_t b = select_bits(instr.immediate, 5, 3);
+      mem.write8(HL(), alu_set(mem.read8(HL()), b));
+      }
       break;
     case Instruction::OP_RESR:
+      {
+      uint8_t b = select_bits(instr.immediate, 5, 3);
+      uint8_t *val = reg(select_bits(instr.immediate, 2, 0));
+      *val = alu_res(*val, b);
+      }
       break;
     case Instruction::OP_RESHL:
+      {
+      uint8_t b = select_bits(instr.immediate, 5, 3);
+      mem.write8(HL(), alu_res(mem.read8(HL()), b));
+      }
       break;
     case Instruction::OP_JPNN:
       pc = to16(instr.immediate, instr.immediate2);
       return;
-      break;
     case Instruction::OP_JPCC:
+      if(jpcc(instr.op1)) {
+        pc = to16(instr.immediate, instr.immediate2);
+        return;
+      }
       break;
     case Instruction::OP_JRE:
-      break;
+      {
+        signed char offset = instr.immediate;
+        pc += offset;
+        return;
+      }
     case Instruction::OP_JRCC:
+      if(jpcc(instr.op1 & 0b11)) {
+        signed char offset = instr.immediate;
+        pc += offset;
+        return;
+      }
       break;
     case Instruction::OP_JPHL:
+      pc = HL();
       break;
     case Instruction::OP_CALLNN:
-      break;
+      call(to16(instr.immediate, instr.immediate2));
+      return;
     case Instruction::OP_CALLCC:
+      if(jpcc(instr.op1)) {
+        call(to16(instr.immediate, instr.immediate2));
+        return;
+      }
       break;
     case Instruction::OP_RETI:
+      puts("not yet implemented: RETI");
       break;
     case Instruction::OP_RET:
+      ret();
+      return;
+    case Instruction::OP_RETCC:
+      if(jpcc(instr.op1)) {
+        ret();
+        return;
+      }
       break;
     case Instruction::OP_RST:
-      break;
-    case Instruction::OP_RETCC:
-      break;
+      pc = 8 * instr.op1;
+      return;
     case Instruction::OP_DAA:
       break;
     case Instruction::OP_CPL:
@@ -480,6 +581,126 @@ uint8_t CPU::alu_dec8(uint8_t val) {
   flag_h = (val&0xf0) != ((val+1)&0xf0);
   return val;
 }
+
+uint8_t CPU::alu_rrc(uint8_t in) {
+  uint8_t out = (in >> 1) | (select_bits(in, 0, 0) << 7);
+  flag_cy = in & 1;
+  flag_n = flag_h = 0;
+  flag_z = (out == 0);
+  return out;
+}
+uint8_t CPU::alu_rr(uint8_t in) {
+  uint8_t out = (in >> 1) | (flag_cy << 7);
+  flag_cy = in & 1;
+  flag_n = flag_h = 0;
+  flag_z = (out == 0);
+  return out;
+}
+uint8_t CPU::alu_rlc(uint8_t in) {
+  uint8_t out = (in << 1) | select_bits(in, 7, 7);
+  flag_cy = out & 1;
+  flag_n = flag_h = 0;
+  flag_z = (out == 0);
+  return out;
+}
+uint8_t CPU::alu_rl(uint8_t in) {
+  uint8_t out = (in << 1) | flag_cy;
+  flag_cy = select_bits(in, 7, 7);
+  flag_z = (out == 0);
+  flag_h = flag_n = 0;
+  return out;
+}
+
+uint8_t CPU::alu_sla(uint8_t in) {
+  uint8_t out = in << 1;
+  flag_cy = select_bits(in, 7, 7);
+  flag_z = (out == 0);
+  flag_h = flag_n = 0;
+  return out;
+}
+uint8_t CPU::alu_sra(uint8_t in) {
+  uint8_t out = (in >>1) | (in & (1<<7));
+  flag_cy = in & 1;
+  flag_z = (out == 0);
+  flag_h = flag_n = 0;
+  return out;
+}
+uint8_t CPU::alu_srl(uint8_t in) {
+  uint8_t out = in >> 1;
+  flag_cy = in & 1;
+  flag_z = (out == 0);
+  flag_h = flag_n = 0;
+  return out;
+}
+
+uint8_t CPU::alu_swap(uint8_t in) {
+  uint8_t out = select_bits(in, 7, 4) | (select_bits(in, 3, 0) << 4);
+  flag_z = (out == 0);
+  flag_cy = flag_h = flag_n = 0;
+  return out;
+}
+
+void CPU::alu_bit(uint8_t in, uint8_t bit) {
+  if(bit > 7) { 
+    printf("bad bit(bit): %d\n", bit);
+    exit(-1);
+  }
+  flag_z = !(in & (1<<bit));
+  flag_n = 0;
+  flag_h = 1;
+
+}
+uint8_t CPU::alu_set(uint8_t in, uint8_t bit) {
+  if(bit > 7) { 
+    printf("bad bit(set): %d\n", bit);
+    exit(-1);
+  }
+  return in | (1<<bit);
+}
+uint8_t CPU::alu_res(uint8_t in, uint8_t bit) {
+  if(bit > 7) { 
+    printf("bad bit(res): %d\n", bit);
+    exit(-1);
+  }
+  return in & (0xff ^ (1<<bit));
+}
+
+bool CPU::jpcc(uint8_t cond) {
+  switch(cond) {
+    case 0://NZ
+      return flag_z == 0;
+    case 1://z
+      return flag_z == 1;
+    case 2://nc
+      return flag_cy == 0;
+    case 3://c:
+      return flag_cy == 1;
+    default:printf("bad cond in jpcc: %d\n", cond);
+            exit(-1);
+  }
+}
+
+void CPU::pushQQ(uint16_t pair) {
+    printf("writing value: %x to memory\n", pair);
+    mem.write8(sp-1, pair>>8);
+    mem.write8(sp-2, pair & 0xff);
+    sp -= 2;
+}
+
+uint16_t CPU::popQQ() {
+  uint16_t ret = to16(mem.read8(sp), mem.read8(sp+1));
+  sp += 2;
+  return ret;
+}
+
+void CPU::call(uint16_t dest) {
+    pushQQ(pc+3);
+    pc = dest;
+}
+void CPU::ret() {
+  pc = popQQ();
+}
+
 
 void CPU::step() {
   printf("PC: %x\n", pc);
