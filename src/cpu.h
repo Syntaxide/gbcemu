@@ -4,6 +4,7 @@
 #include "rom.h"
 #include "memory.h"
 
+uint16_t to16(uint8_t first, uint8_t second);
 enum reg_addrs {
   reg_p1  = 0xff00,
   reg_sb  = 0xff01,
@@ -59,6 +60,7 @@ public:
   void execute(const Instruction &instr);
 
   uint8_t a, b, c, d, e, f, g, h, l;
+  bool ime;
   //uint8_t flag_z, flag_h, flag_n, flag_cy;
   bool Z();
   bool H();
@@ -125,4 +127,10 @@ private:
   Rom *mRom;
   CPU_Speed speed;
   Instruction instruction;
+  enum mode {
+    RUN = 0,
+    HALT,
+    STOP
+  } Mode;
+
 };

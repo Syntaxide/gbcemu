@@ -62,7 +62,6 @@ void decode_instruction(const RomViewBase &rom, Instruction *decoded) {
   decoded->immediate = rom[1];
   decoded->immediate2 = rom[2];
   decoded->bytes_used = 1;
-  printf("i=%d\top1=%d\top2=%d\n", instr, decoded->op1, decoded->op2);
     if(byte == 0b00110110) {
       decoded->operation = Instruction::OP_LDHLN;
       decoded->bytes_used = 2;

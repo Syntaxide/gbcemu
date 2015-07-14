@@ -1,6 +1,7 @@
 #include "cpu.h"
 
 #include <stdint.h>
+#include "disas.h"
 #include "inst_decode.h"
 #include "rom.h"
 
@@ -42,7 +43,6 @@ uint8_t isCarrySum(uint8_t fromBit, int first, int second) {
 uint8_t *CPU::reg(uint8_t code) {
   switch(code) {
   case 0b111:
-    puts("reg a");
     return &a;
   case 0b000:
     return &b;
@@ -144,7 +144,6 @@ void CPU::execute(const Instruction& instr) {
   execute2(instr);
 }
 void CPU::execute2(const Instruction& instr) {
-  printf("op1: %d\n", instr.op1);
   switch(instr.operation) {
     case Instruction::OP_LDRR:
       *reg(instr.op1) = *reg(instr.op2);
@@ -501,7 +500,7 @@ void CPU::execute2(const Instruction& instr) {
       }
       break;
     case Instruction::OP_RETI:
-      puts("not yet implemented: RETI");
+      ret(); //TODO: restore interupt enable flag
       break;
     case Instruction::OP_RET:
       ret();
@@ -513,11 +512,13 @@ void CPU::execute2(const Instruction& instr) {
       }
       break;
     case Instruction::OP_RST:
+      pushQQ(pc);
       pc = 8 * instr.op1;
       return;
     case Instruction::OP_DAA:
       break;
     case Instruction::OP_CPL:
+      a = ~a;
       break;
     case Instruction::OP_NOP:
       break;
@@ -731,12 +732,11 @@ void CPU::ret() {
 
 
 void CPU::step() {
-  printf("PC: %x\n", pc);
   RomView nearPC(*mRom, pc);
   Instruction instr;
   decode_instruction(nearPC, &instr);
-  showOperation(instr.operation);
-  printf("%x, %x\n", instr.immediate, instr.immediate2);
+  printf("%x : ", pc);
+  show(instr);
   if(instr.operation == Instruction::OP_INVALID) {
     puts("exiting due to bad instruction");
     exit(-1);

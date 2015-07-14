@@ -837,7 +837,13 @@ void test_callret() {
   }
 }
 
-void test_ret() {
+void test_cpl() {
+  CPU cpu;
+  cpu.a = 0x35;
+  Instruction instr;
+  instr.operation = Instruction::OP_CPL;
+  cpu.execute(instr);
+  TEST_EQ(cpu.a, 0xca);
 }
 int main() {
   test_add();
@@ -857,4 +863,5 @@ int main() {
   test_srotate();
   test_bitsetres();
   test_callret();
+  test_cpl();
 }

@@ -2,7 +2,7 @@
 #include "rom.h"
 
 int main() {
-  Rom bios("../roms/LoZ.gbc");
+  Rom bios("../roms/PokemonCrystal.gbc");
   CPU cpu(bios);
 
   for(int i=0;i<100;i++) {

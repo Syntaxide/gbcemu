@@ -9,6 +9,7 @@ class Memory {
     void write8(int address, uint8_t value);
     void write16(int address, uint16_t value);
   private:
+    void init();
     uint8_t *memory;
     long size;
 };
