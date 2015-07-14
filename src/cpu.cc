@@ -143,6 +143,7 @@ uint16_t CPU::readQQPair(uint8_t code) const {
 void CPU::execute(const Instruction& instr) {
   bool didJump = true;
   execute2(instr, &didJump);
+  prevOperation = instr.operation;
 }
 void CPU::execute2(const Instruction& instr, bool *didJump) {
   switch(instr.operation) {
@@ -517,6 +518,7 @@ void CPU::execute2(const Instruction& instr, bool *didJump) {
       pc = 8 * instr.op1;
       return;
     case Instruction::OP_DAA:
+      daa();
       break;
     case Instruction::OP_CPL:
       a = ~a;
@@ -524,8 +526,10 @@ void CPU::execute2(const Instruction& instr, bool *didJump) {
     case Instruction::OP_NOP:
       break;
     case Instruction::OP_HALT:
+      mode = HALT;
       break;
     case Instruction::OP_STOP:
+      mode = STOP;
       break;
     default:
      printf("instruction not yet supported: %s\n", OperationStrings[instr.operation]);
@@ -731,7 +735,87 @@ void CPU::call(uint16_t dest) {
 void CPU::ret() {
   pc = popQQ();
 }
+void CPU::daa() {
+  uint8_t fourseven = select_bits(a, 7, 4);
+  uint8_t zerothree = select_bits(a, 3, 0);
+  // entries are from page 111 of gbprogramming manual
+  // cy, bit4-7 of a, h, bit 0-3 of a, a delta, cy result
+  const uint8_t addTable[] = {
+    0, 0x0, 0x9, 0, 0x0, 0x9, 0x00, 0,
+    0, 0x0, 0x8, 0, 0xa, 0xf, 0x06, 0,
+    0, 0x0, 0x9, 1, 0x0, 0x3, 0x06, 0,
+    0, 0xa, 0xf, 0, 0x0, 0x9, 0x06, 1,
+    0, 0x9, 0xf, 0, 0xa, 0xf, 0x66, 1,
+    0, 0xa, 0xf, 1, 0x0, 0x3, 0x66, 1,
+    1, 0x0, 0x2, 0, 0x0, 0x9, 0x60, 1,
+    1, 0x0, 0x2, 0, 0xa, 0xf, 0x66, 1,
+    1, 0x0, 0x3, 1, 0x0, 0x3, 0x66, 1
+  };
 
+
+  const uint8_t subTable[] = {
+    0, 0x0, 0x9, 0, 0x0, 0x9, 0x00, 0,
+    0, 0x0, 0x8, 1, 0x6, 0xf, 0xfa, 0,
+    1, 0x7, 0xf, 0, 0x0, 0x9, 0xa0, 1,
+    1, 0x6, 0xf, 1, 0x6, 0xf, 0x9a, 1
+  };
+  uint8_t addRows = sizeof(addTable) / 8;
+  uint8_t subRows = sizeof(subTable) / 8;
+
+  bool matched = false;
+  switch(prevOperation) {
+    case Instruction::OP_ADDAR:
+    case Instruction::OP_ADDAN:
+    case Instruction::OP_ADDAHL:
+    case Instruction::OP_ADCAR:
+    case Instruction::OP_ADCAN:
+    case Instruction::OP_ADCAHL:
+      for(int row=0;row<addRows; row++) {
+        if(CY() == addTable[row*8 + 0] &&
+           fourseven >= addTable[row*8 + 1] &&
+           fourseven <= addTable[row*8 + 2] &&
+           H() == addTable[row*8 + 3] &&
+           zerothree >= addTable[row*8 + 4] &&
+           zerothree <= addTable[row*8 + 5]) {
+          a += addTable[row*8 + 6];
+          setCY(addTable[row*8 + 7]);
+          matched = true;
+          break;
+        }
+      }
+      break;
+    case Instruction::OP_SUBR:
+    case Instruction::OP_SUBN:
+    case Instruction::OP_SUBHL:
+    case Instruction::OP_SBCAR:
+    case Instruction::OP_SBCAN:
+    case Instruction::OP_SBCAHL:
+      for(int row=0;row<subRows; row++) {
+        if(CY() == subTable[row*8 + 0] &&
+           fourseven >= subTable[row*8 + 1] &&
+           fourseven <= subTable[row*8 + 2] &&
+           H() == subTable[row*8 + 3] &&
+           zerothree >= subTable[row*8 + 4] &&
+           zerothree <= subTable[row*8 + 5]) {
+          a += subTable[row*8 + 6];
+          setCY(subTable[row*8 + 7]);
+          matched = true;
+          break;
+        }
+      }
+      break;
+  }
+  if(!matched) {
+    printf("unable to find match for daa.");
+    printf("%s , CY=%d, 4-7=%x, H=%d, 0-3=%x\n", 
+           OperationStrings[prevOperation],
+           CY(),
+           fourseven,
+           H(),
+           zerothree);
+    exit(-1);
+  }
+}
 
 void CPU::step() {
   RomView nearPC(*mRom, pc);

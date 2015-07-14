@@ -96,6 +96,7 @@ public:
   bool jpcc(uint8_t cond);
   void pushQQ(uint16_t value);
   uint16_t popQQ();
+  void daa();
   void call(uint16_t dest);
   void ret();
   Memory mem;
@@ -115,6 +116,7 @@ public:
   void setQQPair(uint8_t code, uint16_t value);
   uint16_t readQQPair(uint8_t code) const;
 private:
+  Instruction::Operation prevOperation;
   /* 
      core of execution. there are some things
      that must be done for each instruction, so these are wrapped in execute()
@@ -127,10 +129,10 @@ private:
   Rom *mRom;
   CPU_Speed speed;
   Instruction instruction;
-  enum mode {
+  enum Mode {
     RUN = 0,
     HALT,
     STOP
-  } Mode;
+  } mode;
 
 };

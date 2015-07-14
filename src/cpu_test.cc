@@ -845,6 +845,25 @@ void test_cpl() {
   cpu.execute(instr);
   TEST_EQ(cpu.a, 0xca);
 }
+
+void test_daa() {
+  CPU cpu;
+  cpu.a = 0x45;
+  cpu.b = 0x38;
+  Instruction instr;
+  instr.operation = Instruction::OP_ADDAR;
+  instr.op1 = REG_b;
+  cpu.execute(instr);
+  cpu.daa();
+  TEST_EQ(cpu.a, 0x83);
+  TEST_EQ(cpu.CY(), 0);
+
+  instr.operation = Instruction::OP_SUBR;
+  cpu.execute(instr);
+  cpu.daa();
+  TEST_EQ(cpu.a, 0x45);
+}
+
 int main() {
   test_add();
   test_adc();
@@ -864,4 +883,6 @@ int main() {
   test_bitsetres();
   test_callret();
   test_cpl();
+  test_daa();
+  puts("all test ran");
 }
