@@ -122,7 +122,9 @@ enum reg_encoding {
   FUN(OP_CPL, 1)     \
   FUN(OP_NOP, 1)     \
   FUN(OP_HALT, 1)    \
-  FUN(OP_STOP, 1)
+  FUN(OP_STOP, 1) \
+  FUN(OP_DI, 4) \
+  FUN(OP_EI, 4) \
 
 static const char *OperationStrings[] = {
     MAP_OPERATIONS(GEN_STRING)

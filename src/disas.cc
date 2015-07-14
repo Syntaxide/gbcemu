@@ -21,6 +21,16 @@ const char* showCC(uint8_t code) {
     exit(-1);
   }
 }
+
+const char* showDD(uint8_t code) {
+  const char *pairs[] = {"bc", "de", "hl", "sp"};
+  if(code < 4) {
+    return pairs[code];
+  } else {
+    printf("bad dd code: %d\n", code);
+    exit(-1);
+  }
+}
 // pretty print instruction struct, 
 // acts like a disassembler
 void show(const Instruction &instr) {
@@ -30,7 +40,7 @@ void show(const Instruction &instr) {
       printf("%s, %s", showReg(instr.op1), showReg(instr.op2));
       break;
     case Instruction::OP_LDRN:
-      printf("%s, %d", showReg(instr.op1), instr.op2);
+      printf("%s, %x", showReg(instr.op1), instr.immediate);
       break;
     case Instruction::OP_LDRHL:
       break;
@@ -54,6 +64,8 @@ void show(const Instruction &instr) {
     case Instruction::OP_LDANN:
       break;
     case Instruction::OP_LDNNA:
+      printf("%x, A", to16(instr.immediate,
+                           instr.immediate2));
       break;
     case Instruction::OP_LDAHLI:
       break;
@@ -68,6 +80,8 @@ void show(const Instruction &instr) {
     case Instruction::OP_LDHLDA:
       break;
     case Instruction::OP_LDDDNN:
+      printf("%s, %x", showDD(instr.op1>>1), to16(instr.immediate, 
+                                                  instr.immediate2));
       break;
     case Instruction::OP_LDSPHL:
       break;

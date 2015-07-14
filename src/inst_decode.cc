@@ -117,8 +117,11 @@ void decode_instruction(const RomViewBase &rom, Instruction *decoded) {
     INSTR_REGISTER_DEF(0b11111010, Instruction::OP_LDANN, 3)
     INSTR_REGISTER_DEF(0b11101010, Instruction::OP_LDNNA, 3)
     INSTR_REGISTER_DEF(0b11111001, Instruction::OP_LDSPHL, 1)
-    INSTR_REGISTER_DEF(0b11000101, Instruction::OP_PUSHQQ, 1)
-    INSTR_REGISTER_DEF(0b11000001, Instruction::OP_POPQQ, 1)
+    else if(instr == 0b11 && !(op1&1) && op2 == 0b101) {
+      INSTR(Instruction::OP_PUSHQQ, 1)
+    } else if(instr == 0b11 && !(op1&1) && op2 == 0b001) {
+      INSTR(Instruction::OP_POPQQ, 1)
+    }
     INSTR_REGISTER_DEF(0b11111000, Instruction::OP_LDHLSP, 2)
     INSTR_REGISTER_DEF(0b11010110, Instruction::OP_SUBN, 2)
     INSTR_REGISTER_DEF(0b10010110, Instruction::OP_SUBHL, 1)
@@ -170,6 +173,8 @@ void decode_instruction(const RomViewBase &rom, Instruction *decoded) {
     INSTR_REGISTER_DEF(0b00011111, Instruction::OP_RRA, 1)
 
     INSTR_REGISTER_DEF(0b11000011, Instruction::OP_JPNN, 3)
+    INSTR_REGISTER_DEF(0xf3, Instruction::OP_DI, 1)
+    INSTR_REGISTER_DEF(0xfb, Instruction::OP_EI, 1)
     else if(instr == 0b11 && (op1 & 0b100) == 0 && op2 == 0b010) {
       INSTR(Instruction::OP_JPCC, 3)
     }

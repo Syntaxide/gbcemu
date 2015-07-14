@@ -56,7 +56,7 @@ public:
   CPU(Rom &rom);
   void reset();
     
-  void step();
+  bool step();
   void execute(const Instruction &instr);
 
   uint8_t a, b, c, d, e, f, g, h, l;

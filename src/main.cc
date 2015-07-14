@@ -1,14 +1,19 @@
 #include "cpu.h"
 #include "rom.h"
 
-int main() {
-  Rom bios("../roms/PokemonCrystal.gbc");
-  CPU cpu(bios);
+int main(int argc, char **argv) {
+  if(argc != 2) {
+    puts("usage: ");
+    puts("emu rom.gbc");
+    return -1;
+  } else {
+    Rom bios(argv[1]);
+    CPU cpu(bios);
 
-  for(int i=0;i<100;i++) {
-    cpu.step();
+    while(cpu.step()) {
+    }
+    return 0;
   }
-  return 0;
 }
 
 

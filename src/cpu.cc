@@ -14,8 +14,12 @@ CPU::CPU(Rom &rom) {
 }
 
 void CPU::reset() {
+  mode = RUN;
   pc = 0x100;
-  a = b = c = d = e = f = h = l = 0;
+  setAF(0x01b0);
+  setBC(0x0013);
+  setDE(0x00d8);
+  setHL(0x014d);
   sp = 0xfffe;
   setZ(0);
   setH(0);
@@ -817,7 +821,7 @@ void CPU::daa() {
   }
 }
 
-void CPU::step() {
+bool CPU::step() {
   RomView nearPC(*mRom, pc);
   Instruction instr;
   decode_instruction(nearPC, &instr);
@@ -827,8 +831,10 @@ void CPU::step() {
     puts("exiting due to bad instruction");
     exit(-1);
   }
-
   execute(instr);
+  return mode == RUN;
+
+
 
 }
 
