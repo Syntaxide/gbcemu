@@ -29,10 +29,10 @@ void test_add() {
 
     cpu.execute(instr);
     TEST_EQ(cpu.a, 0);
-    TEST_EQ(cpu.flag_z, 1);
-    TEST_EQ(cpu.flag_h, 1);
-    TEST_EQ(cpu.flag_n, 0);
-    TEST_EQ(cpu.flag_cy, 1);
+    TEST_EQ(cpu.Z(), 1);
+    TEST_EQ(cpu.H(), 1);
+    TEST_EQ(cpu.N(), 0);
+    TEST_EQ(cpu.CY(), 1);
   }
 
   {
@@ -44,10 +44,10 @@ void test_add() {
     cpu.execute(instr);
 
     TEST_EQ(cpu.a, 0x3b);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 1);
-    TEST_EQ(cpu.flag_n, 0);
-    TEST_EQ(cpu.flag_cy, 1);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 1);
+    TEST_EQ(cpu.N(), 0);
+    TEST_EQ(cpu.CY(), 1);
   }
 
   { 
@@ -60,10 +60,10 @@ void test_add() {
 
     cpu.execute(instr);
     TEST_EQ(cpu.a, 0x4e);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
-    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
+    TEST_EQ(cpu.CY(), 0);
   }
     
 }
@@ -77,7 +77,7 @@ void test_adc() {
     cpu.h = 0x00;
     cpu.l = 0x00;
     cpu.mem.write8(0, 0x0f);
-    cpu.flag_cy = 1;
+    cpu.setCY(1);
 
     // ADC A, E
     Instruction instr;
@@ -87,25 +87,25 @@ void test_adc() {
 
     TEST_EQ(cpu.mem.read8(0), 0x0f);
     TEST_EQ(cpu.a, 0xf1);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 1);
-    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 1);
+    TEST_EQ(cpu.CY(), 0);
   }
 
   { //ADC A, E, where a = 0xe1, e = 0x0f. cy=1
     CPU cpu;
     cpu.a = 0xe1;
     cpu.e = 0x0f;
-    cpu.flag_cy = 1;
+    cpu.setCY(1);
     Instruction instr;
     instr.operation = Instruction::OP_ADCAR;
     instr.op2 = REG_e;
 
     cpu.execute(instr);
     TEST_EQ(cpu.a, 0xf1);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 1);
-    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 1);
+    TEST_EQ(cpu.CY(), 0);
   }
 }
 
@@ -122,10 +122,10 @@ void test_sub() {
 
     cpu.execute(instr);
     TEST_EQ(cpu.a, 0);
-    TEST_EQ(cpu.flag_z, 1);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 1);
-    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.Z(), 1);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 1);
+    TEST_EQ(cpu.CY(), 0);
   }
 
   { // SUB 0x0f
@@ -137,10 +137,10 @@ void test_sub() {
 
     cpu.execute(instr);
     TEST_EQ(cpu.a, 0x2f);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 1);
-    TEST_EQ(cpu.flag_n, 1);
-    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 1);
+    TEST_EQ(cpu.N(), 1);
+    TEST_EQ(cpu.CY(), 0);
   }
 
   { // SUB (HL)
@@ -155,10 +155,10 @@ void test_sub() {
 
     cpu.execute(instr);
     TEST_EQ(cpu.a, 0xfe);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 1);
-    TEST_EQ(cpu.flag_cy, 1);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 1);
+    TEST_EQ(cpu.CY(), 1);
   }
 }
 
@@ -169,37 +169,37 @@ void test_sbc() {
     CPU cpu;
     cpu.a = 0x3b;
     cpu.h = 0x2a;
-    cpu.flag_cy = 1;
+    cpu.setCY(1);
     Instruction instr;
     instr.operation = Instruction::OP_SBCAR;
     instr.op2 = REG_h;
     cpu.execute(instr);
     TEST_EQ(cpu.a, 0x10);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 1);
-    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 1);
+    TEST_EQ(cpu.CY(), 0);
   }
 
   { // sbc a, 0x3a
     CPU cpu;
     cpu.a = 0x3b;
-    cpu.flag_cy = 1;
+    cpu.setCY(1);
     Instruction instr;
     instr.operation = Instruction::OP_SBCAN;
     instr.immediate = 0x3a;
     cpu.execute(instr);
     TEST_EQ(cpu.a, 0x00);
-    TEST_EQ(cpu.flag_z, 1);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 1);
-    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.Z(), 1);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 1);
+    TEST_EQ(cpu.CY(), 0);
   }
 
   { // sbc a, (HL)
     CPU cpu;
     cpu.a = 0x3b;
-    cpu.flag_cy = 1;
+    cpu.setCY(1);
     cpu.setHL(0xdada);
     cpu.mem.write8(0xdada, 0x4f);
     Instruction instr;
@@ -207,10 +207,10 @@ void test_sbc() {
     instr.immediate = 0x3a;
     cpu.execute(instr);
     TEST_EQ(cpu.a, 0xeb);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 1);
-    TEST_EQ(cpu.flag_n, 1);
-    TEST_EQ(cpu.flag_cy, 1);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 1);
+    TEST_EQ(cpu.N(), 1);
+    TEST_EQ(cpu.CY(), 1);
   }
 }
 
@@ -226,10 +226,10 @@ void test_and() {
     instr.op2 = REG_l;
     cpu.execute(instr);
     TEST_EQ(cpu.a, 0x1a);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 1);
-    TEST_EQ(cpu.flag_n, 0);
-    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 1);
+    TEST_EQ(cpu.N(), 0);
+    TEST_EQ(cpu.CY(), 0);
   }
   { // and 0x38
     CPU cpu;
@@ -239,10 +239,10 @@ void test_and() {
     instr.immediate = 0x38;
     cpu.execute(instr);
     TEST_EQ(cpu.a, 0x18);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 1);
-    TEST_EQ(cpu.flag_n, 0);
-    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 1);
+    TEST_EQ(cpu.N(), 0);
+    TEST_EQ(cpu.CY(), 0);
   }
   { // and (HL)
     CPU cpu;
@@ -253,10 +253,10 @@ void test_and() {
     instr.operation = Instruction::OP_ANDHL;
     cpu.execute(instr);
     TEST_EQ(cpu.a, 0x0);
-    TEST_EQ(cpu.flag_z, 1);
-    TEST_EQ(cpu.flag_h, 1);
-    TEST_EQ(cpu.flag_n, 0);
-    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.Z(), 1);
+    TEST_EQ(cpu.H(), 1);
+    TEST_EQ(cpu.N(), 0);
+    TEST_EQ(cpu.CY(), 0);
   }
 }
 
@@ -271,10 +271,10 @@ void test_or() {
     instr.op2 = REG_a;
     cpu.execute(instr);
     TEST_EQ(cpu.a, 0x5a);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
-    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
+    TEST_EQ(cpu.CY(), 0);
   }
   { // or 3
     CPU cpu;
@@ -284,10 +284,10 @@ void test_or() {
     instr.immediate = 0x3;
     cpu.execute(instr);
     TEST_EQ(cpu.a, 0x5b);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
-    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
+    TEST_EQ(cpu.CY(), 0);
   }
   { // or (HL)
     CPU cpu;
@@ -298,10 +298,10 @@ void test_or() {
     instr.operation = Instruction::OP_ORHL;
     cpu.execute(instr);
     TEST_EQ(cpu.a, 0x5f);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
-    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
+    TEST_EQ(cpu.CY(), 0);
   }
 }
 void test_xor() {
@@ -315,7 +315,7 @@ void test_xor() {
     instr.op2 = REG_a;
     cpu.execute(instr);
     TEST_EQ(cpu.a, 0x0);
-    TEST_EQ(cpu.flag_z, 1);
+    TEST_EQ(cpu.Z(), 1);
   }
   { // xor 0xf
     CPU cpu;
@@ -325,7 +325,7 @@ void test_xor() {
     instr.immediate = 0xf;
     cpu.execute(instr);
     TEST_EQ(cpu.a, 0xf0);
-    TEST_EQ(cpu.flag_z, 0);
+    TEST_EQ(cpu.Z(), 0);
   }
   { // xor (HL)
     CPU cpu;
@@ -336,7 +336,7 @@ void test_xor() {
     instr.operation = Instruction::OP_XORHL;
     cpu.execute(instr);
     TEST_EQ(cpu.a, 0x75);
-    TEST_EQ(cpu.flag_z, 0);
+    TEST_EQ(cpu.Z(), 0);
   }
 }
 
@@ -351,10 +351,10 @@ void test_cp() {
     instr.operation = Instruction::OP_CPR;
     instr.op2 = REG_b;
     cpu.execute(instr);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 1);
-    TEST_EQ(cpu.flag_n, 1);
-    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 1);
+    TEST_EQ(cpu.N(), 1);
+    TEST_EQ(cpu.CY(), 0);
   }
   { // cp 0x3c
     CPU cpu;
@@ -363,10 +363,10 @@ void test_cp() {
     instr.operation = Instruction::OP_CPN;
     instr.immediate = 0x3c;
     cpu.execute(instr);
-    TEST_EQ(cpu.flag_z, 1);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 1);
-    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.Z(), 1);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 1);
+    TEST_EQ(cpu.CY(), 0);
   }
   { // cp (HL)
     CPU cpu;
@@ -376,10 +376,10 @@ void test_cp() {
     Instruction instr;
     instr.operation = Instruction::OP_CPHL;
     cpu.execute(instr);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
-    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
+    TEST_EQ(cpu.CY(), 0);
   }
 }
 
@@ -393,9 +393,9 @@ void test_inc() {
     instr.op1 = REG_a;
     cpu.execute(instr);
     TEST_EQ(cpu.a, 0);
-    TEST_EQ(cpu.flag_z, 1);
-    TEST_EQ(cpu.flag_h, 1);
-    TEST_EQ(cpu.flag_n, 0);
+    TEST_EQ(cpu.Z(), 1);
+    TEST_EQ(cpu.H(), 1);
+    TEST_EQ(cpu.N(), 0);
   }
   {
     CPU cpu;
@@ -405,9 +405,9 @@ void test_inc() {
     cpu.mem.write8(0xd00d, 0x50);
     cpu.execute(instr);
     TEST_EQ(cpu.mem.read8(0xd00d), 0x51);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
   }
 }
 
@@ -421,9 +421,9 @@ void test_dec() {
     instr.op1 = REG_a;
     cpu.execute(instr);
     TEST_EQ(cpu.a, 0);
-    TEST_EQ(cpu.flag_z, 1);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 1);
+    TEST_EQ(cpu.Z(), 1);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 1);
   }
   {
     CPU cpu;
@@ -433,9 +433,9 @@ void test_dec() {
     cpu.mem.write8(0xd00d, 0x00);
     cpu.execute(instr);
     TEST_EQ(cpu.mem.read8(0xd00d), 0xFF);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 1);
-    TEST_EQ(cpu.flag_n, 1);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 1);
+    TEST_EQ(cpu.N(), 1);
   }
 }
 
@@ -487,9 +487,9 @@ void test_add16() {
     cpu.execute(instr);
 
     TEST_EQ(cpu.HL(), 0x9028);
-    TEST_EQ(cpu.flag_h, 1);
-    TEST_EQ(cpu.flag_n, 0);
-    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.H(), 1);
+    TEST_EQ(cpu.N(), 0);
+    TEST_EQ(cpu.CY(), 0);
   }
   { //add hl, hl
     CPU cpu;
@@ -500,9 +500,9 @@ void test_add16() {
     cpu.execute(instr);
 
     TEST_EQ(cpu.HL(), 0x1446);
-    TEST_EQ(cpu.flag_h, 1);
-    TEST_EQ(cpu.flag_n, 0);
-    TEST_EQ(cpu.flag_cy, 1);
+    TEST_EQ(cpu.H(), 1);
+    TEST_EQ(cpu.N(), 0);
+    TEST_EQ(cpu.CY(), 1);
   }
 
   { // add SP, e
@@ -514,10 +514,10 @@ void test_add16() {
     cpu.execute(instr);
 
     TEST_EQ(cpu.SP(), 0xfffa);
-    TEST_EQ(cpu.flag_cy, 0);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
-    TEST_EQ(cpu.flag_z, 0);
+    TEST_EQ(cpu.CY(), 0);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
+    TEST_EQ(cpu.Z(), 0);
   }
 }
 
@@ -547,15 +547,15 @@ void test_rotates() {
     CPU cpu;
     Instruction instr;
     cpu.a = 0x85;
-    cpu.flag_cy = 0;
+    cpu.setCY(0);
     instr.operation = Instruction::OP_RLCA;
     cpu.execute(instr);
 
     TEST_EQ(cpu.a, 0x0b);
-    TEST_EQ(cpu.flag_cy, 1);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
+    TEST_EQ(cpu.CY(), 1);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
   }
 
   { // RLA
@@ -563,15 +563,15 @@ void test_rotates() {
     CPU cpu;
     Instruction instr;
     cpu.a = 0x95;
-    cpu.flag_cy = 1;
+    cpu.setCY(1);
     instr.operation = Instruction::OP_RLA;
     cpu.execute(instr);
 
     TEST_EQ(cpu.a, 0x2b);
-    TEST_EQ(cpu.flag_cy, 1);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
+    TEST_EQ(cpu.CY(), 1);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
   }
 
   { // RRCA
@@ -580,14 +580,14 @@ void test_rotates() {
     Instruction instr;
     instr.operation = Instruction::OP_RRCA;
     cpu.a = 0x3b;
-    cpu.flag_cy = 0;
+    cpu.setCY(0);
     cpu.execute(instr);
 
     TEST_EQ(cpu.a, 0x9d);
-    TEST_EQ(cpu.flag_cy, 1);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
+    TEST_EQ(cpu.CY(), 1);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
   }
 
   { // RRA
@@ -596,14 +596,14 @@ void test_rotates() {
     Instruction instr;
     instr.operation = Instruction::OP_RRA;
     cpu.a = 0x81;
-    cpu.flag_cy = 0;
+    cpu.setCY(0);
     cpu.execute(instr);
 
     TEST_EQ(cpu.a, 0x40);
-    TEST_EQ(cpu.flag_cy, 1);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
+    TEST_EQ(cpu.CY(), 1);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
   }
 
   { 
@@ -613,14 +613,14 @@ void test_rotates() {
     instr.operation = Instruction::OP_RLCR;
     instr.immediate = REG_b;
     cpu.b = 0x85;
-    cpu.flag_cy = 0;
+    cpu.setCY(0);
     cpu.execute(instr);
 
     TEST_EQ(cpu.b, 0x0b);
-    TEST_EQ(cpu.flag_cy, 1);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
+    TEST_EQ(cpu.CY(), 1);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
   }
 
   {
@@ -633,10 +633,10 @@ void test_rotates() {
     cpu.execute(instr);
 
     TEST_EQ(cpu.mem.read8(cpu.HL()), 0x00);
-    TEST_EQ(cpu.flag_cy, 0);
-    TEST_EQ(cpu.flag_z, 1);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
+    TEST_EQ(cpu.CY(), 0);
+    TEST_EQ(cpu.Z(), 1);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
   }
 
   {
@@ -649,10 +649,10 @@ void test_rotates() {
     cpu.execute(instr);
 
     TEST_EQ(cpu.l, 0x00);
-    TEST_EQ(cpu.flag_cy, 1);
-    TEST_EQ(cpu.flag_z, 1);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
+    TEST_EQ(cpu.CY(), 1);
+    TEST_EQ(cpu.Z(), 1);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
   }
 
   {
@@ -665,10 +665,10 @@ void test_rotates() {
     cpu.execute(instr);
 
     TEST_EQ(cpu.mem.read8(cpu.HL()), 0x22);
-    TEST_EQ(cpu.flag_cy, 0);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
+    TEST_EQ(cpu.CY(), 0);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
   }
 
   {
@@ -681,10 +681,10 @@ void test_rotates() {
     cpu.execute(instr);
 
     TEST_EQ(cpu.c, 0x80);
-    TEST_EQ(cpu.flag_cy, 1);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
+    TEST_EQ(cpu.CY(), 1);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
   }
 
   {
@@ -694,14 +694,14 @@ void test_rotates() {
     instr.operation = Instruction::OP_RRCHL;
     cpu.setHL(0xfeed);
     cpu.mem.write8(0xfeed, 0x00);
-    cpu.flag_cy = 0;
+    cpu.setCY(0);
     cpu.execute(instr);
 
     TEST_EQ(cpu.mem.read8(cpu.HL()), 0);
-    TEST_EQ(cpu.flag_cy, 0);
-    TEST_EQ(cpu.flag_z, 1);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
+    TEST_EQ(cpu.CY(), 0);
+    TEST_EQ(cpu.Z(), 1);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
   }
 }
 
@@ -709,69 +709,69 @@ void test_srotate() {
   {
     CPU cpu;
     TEST_EQ(0x00, cpu.alu_sla(0x80));
-    TEST_EQ(cpu.flag_cy, 1);
-    TEST_EQ(cpu.flag_z, 1);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
+    TEST_EQ(cpu.CY(), 1);
+    TEST_EQ(cpu.Z(), 1);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
   }
   {
     CPU cpu;
     TEST_EQ(0xFE, cpu.alu_sla(0xFF));
-    TEST_EQ(cpu.flag_cy, 1);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
+    TEST_EQ(cpu.CY(), 1);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
   }
 
   {
     CPU cpu;
     TEST_EQ(0xc5, cpu.alu_sra(0x8a));
-    TEST_EQ(cpu.flag_cy, 0);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
+    TEST_EQ(cpu.CY(), 0);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
   }
   {
     CPU cpu;
     TEST_EQ(0x00, cpu.alu_sra(0x01));
-    TEST_EQ(cpu.flag_cy, 1);
-    TEST_EQ(cpu.flag_z, 1);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
+    TEST_EQ(cpu.CY(), 1);
+    TEST_EQ(cpu.Z(), 1);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
   }
 
   {
     CPU cpu;
     TEST_EQ(cpu.alu_srl(0x01), 0);
-    TEST_EQ(cpu.flag_cy, 1);
-    TEST_EQ(cpu.flag_z, 1);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
+    TEST_EQ(cpu.CY(), 1);
+    TEST_EQ(cpu.Z(), 1);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
   }
   {
     CPU cpu;
     TEST_EQ(cpu.alu_srl(0xff), 0x7f);
-    TEST_EQ(cpu.flag_cy, 1);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
+    TEST_EQ(cpu.CY(), 1);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
   }
 
   {
     CPU cpu;
     TEST_EQ(cpu.alu_swap(0), 0);
-    TEST_EQ(cpu.flag_z, 1);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
-    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.Z(), 1);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
+    TEST_EQ(cpu.CY(), 0);
   }
   {
     CPU cpu;
     TEST_EQ(cpu.alu_swap(0xf0), 0x0f);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 0);
-    TEST_EQ(cpu.flag_n, 0);
-    TEST_EQ(cpu.flag_cy, 0);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 0);
+    TEST_EQ(cpu.N(), 0);
+    TEST_EQ(cpu.CY(), 0);
   }
 }
 
@@ -779,16 +779,16 @@ void test_bitsetres() {
   {
     CPU cpu;
     cpu.alu_bit(0x80, 7);
-    TEST_EQ(cpu.flag_z, 0);
-    TEST_EQ(cpu.flag_h, 1);
-    TEST_EQ(cpu.flag_n, 0);
+    TEST_EQ(cpu.Z(), 0);
+    TEST_EQ(cpu.H(), 1);
+    TEST_EQ(cpu.N(), 0);
   }
   {
     CPU cpu;
     cpu.alu_bit(0xef, 4);
-    TEST_EQ(cpu.flag_z, 1);
-    TEST_EQ(cpu.flag_h, 1);
-    TEST_EQ(cpu.flag_n, 0);
+    TEST_EQ(cpu.Z(), 1);
+    TEST_EQ(cpu.H(), 1);
+    TEST_EQ(cpu.N(), 0);
   }
   {
     CPU cpu;

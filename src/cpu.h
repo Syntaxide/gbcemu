@@ -59,7 +59,15 @@ public:
   void execute(const Instruction &instr);
 
   uint8_t a, b, c, d, e, f, g, h, l;
-  uint8_t flag_z, flag_h, flag_n, flag_cy;
+  //uint8_t flag_z, flag_h, flag_n, flag_cy;
+  bool Z();
+  bool H();
+  bool N();
+  bool CY();
+  void setZ(bool v);
+  void setH(bool v);
+  void setN(bool v);
+  void setCY(bool v);
   uint16_t pc, sp;
 
   // sets carry flags appropriately

@@ -16,7 +16,10 @@ void CPU::reset() {
   pc = 0x100;
   a = b = c = d = e = f = h = l = 0;
   sp = 0xfffe;
-  flag_z = flag_h = flag_cy = 0;
+  setZ(0);
+  setH(0);
+  setN(0);
+  setCY(0);
 }
 
 // takes two 8 bit values from memory and composes them together
@@ -58,6 +61,22 @@ uint8_t *CPU::reg(uint8_t code) {
   exit(-1);
 }
 
+bool CPU::Z() { return select_bits(f, 7, 7); }
+bool CPU::N() { return select_bits(f, 6, 6); }
+bool CPU::H() { return select_bits(f, 5, 5); }
+bool CPU::CY() { return select_bits(f, 4, 4); }
+void CPU::setZ(bool v) {
+  f = (v << 7) | select_bits(f, 6, 0);
+}
+void CPU::setN(bool v) {
+  f = (Z() << 7) | (v << 6) | select_bits(f, 5,0);
+}
+void CPU::setH(bool v) {
+  f = (Z() << 7) | (N() << 6) | (v << 5) | select_bits(f, 4,0);
+}
+void CPU::setCY(bool v) {
+  f = (Z() << 7) | (N() << 6) | (H() << 5) | (v<<4) | select_bits(f, 3,0);
+}
 uint16_t CPU::BC() const { return (b<<8) + c; }
 uint16_t CPU::DE() const { return (d<<8) + e; }
 uint16_t CPU::HL() const { return (h<<8) + l; }
@@ -223,13 +242,13 @@ void CPU::execute2(const Instruction& instr) {
       a = alu_add8(a, mem.read8(HL()), 0);
       break;
     case Instruction::OP_ADCAR:
-      a = alu_add8(a, *reg(instr.op2), flag_cy);
+      a = alu_add8(a, *reg(instr.op2), CY());
       break;
     case Instruction::OP_ADCAN:
-      a = alu_add8(a, instr.immediate, flag_cy);
+      a = alu_add8(a, instr.immediate, CY());
       break;
     case Instruction::OP_ADCAHL:
-      a = alu_add8(a, mem.read8(HL()), flag_cy); 
+      a = alu_add8(a, mem.read8(HL()), CY()); 
       break;
     case Instruction::OP_SUBR:
       a = alu_sub8(a, *reg(instr.op2), 0);
@@ -241,13 +260,13 @@ void CPU::execute2(const Instruction& instr) {
       a = alu_sub8(a, mem.read8(HL()), 0);
       break;
     case Instruction::OP_SBCAR:
-      a = alu_sub8(a, *reg(instr.op2), flag_cy);
+      a = alu_sub8(a, *reg(instr.op2), CY());
       break;
     case Instruction::OP_SBCAN:
-      a = alu_sub8(a, instr.immediate, flag_cy);
+      a = alu_sub8(a, instr.immediate, CY());
       break;
     case Instruction::OP_SBCAHL:
-      a = alu_sub8(a, mem.read8(HL()), flag_cy);
+      a = alu_sub8(a, mem.read8(HL()), CY());
       break;
     case Instruction::OP_ANDR:
       a = alu_and8(a, *reg(instr.op2));
@@ -515,51 +534,51 @@ void CPU::execute2(const Instruction& instr) {
 
 uint8_t CPU::alu_add8(uint8_t first, uint8_t second, uint8_t c) {
   uint8_t sum = first + second + c;
-  flag_h = ((first&0xf0) + (second&0xf0)) != (sum&0xf0);  //carry from lower nibble
-  flag_cy = ((first + second + c) & 0xf00) != 0;
-  flag_z = (sum == 0);
-  flag_n = 0;
+  setH(((first&0xf0) + (second&0xf0)) != (sum&0xf0));  //carry from lower nibble
+  setCY(((first + second + c) & 0xf00) != 0);
+  setZ((sum == 0));
+  setN(0);
   return sum;
 }
 
 uint16_t CPU::alu_add16(uint16_t first, uint16_t second, uint8_t c) {
   uint16_t sum = first + second;
-  flag_h = isCarrySum(11, first, second);
-  flag_cy = isCarrySum(15, first, second);
-  flag_n = 0;
+  setH(isCarrySum(11, first, second));
+  setCY(isCarrySum(15, first, second));
+  setN(0);
   return sum;
 }
 uint8_t CPU::alu_sub8(uint8_t first, uint8_t second, uint8_t c) {
   uint8_t diff = first - c - second;
-  flag_h = ((first&0x0f) -c - (second&0x0f)) != (diff&0x0f);  //carry to lower nibble
-  flag_cy = ((first - second - c) & 0xf00) != 0;
-  flag_z = (diff == 0);
-  flag_n = 1;
+  setH(((first&0x0f) -c - (second&0x0f)) != (diff&0x0f));  //carry to lower nibble
+  setCY(((first - second - c) & 0xf00) != 0);
+  setZ((diff == 0));
+  setN(1);
   return diff;
 }
 uint8_t CPU::alu_and8(uint8_t first, uint8_t second) {
   uint8_t res = first & second;
-  flag_h = 1;
-  flag_cy = 0;
-  flag_z = (res == 0);
-  flag_n = 0;
+  setH(1);
+  setCY(0);
+  setZ((res == 0));
+  setN(0);
   return res;
 }
 
 uint8_t CPU::alu_or8(uint8_t first, uint8_t second) {
   uint8_t res = first | second;
-  flag_h = 0;
-  flag_cy = 0;
-  flag_z = (res == 0);
-  flag_n = 0;
+  setH(0);
+  setCY(0);
+  setZ((res == 0));
+  setN(0);
   return res;
 }
 uint8_t CPU::alu_xor8(uint8_t first, uint8_t second) {
   uint8_t res = first ^ second;
-  flag_h = 0;
-  flag_cy = 0;
-  flag_z = (res == 0);
-  flag_n = 0;
+  setH(0);
+  setCY(0);
+  setZ((res == 0));
+  setN(0);
   return res;
 }
 void CPU::alu_cp8(uint8_t first, uint8_t second) {
@@ -568,75 +587,84 @@ void CPU::alu_cp8(uint8_t first, uint8_t second) {
 
 uint8_t CPU::alu_inc8(uint8_t val) {
   val = val + 1;
-  flag_z = (val == 0);
-  flag_n = 0;
-  flag_h = (val&0xf0) != ((val-1)&0xf0);
+  setZ((val == 0));
+  setN(0);
+  setH((val&0xf0) != ((val-1)&0xf0));
   return val;
 }
 
 uint8_t CPU::alu_dec8(uint8_t val) {
   val = val - 1;
-  flag_z = (val == 0);
-  flag_n = 1;
-  flag_h = (val&0xf0) != ((val+1)&0xf0);
+  setZ((val == 0));
+  setN(1);
+  setH((val&0xf0) != ((val+1)&0xf0));
   return val;
 }
 
 uint8_t CPU::alu_rrc(uint8_t in) {
   uint8_t out = (in >> 1) | (select_bits(in, 0, 0) << 7);
-  flag_cy = in & 1;
-  flag_n = flag_h = 0;
-  flag_z = (out == 0);
+  setCY(in & 1);
+  setN(0);
+  setH(0);
+  setZ((out == 0));
   return out;
 }
 uint8_t CPU::alu_rr(uint8_t in) {
-  uint8_t out = (in >> 1) | (flag_cy << 7);
-  flag_cy = in & 1;
-  flag_n = flag_h = 0;
-  flag_z = (out == 0);
+  uint8_t out = (in >> 1) | (CY() << 7);
+  setCY(in & 1);
+  setN(0);
+  setH(0);
+  setZ((out == 0));
   return out;
 }
 uint8_t CPU::alu_rlc(uint8_t in) {
   uint8_t out = (in << 1) | select_bits(in, 7, 7);
-  flag_cy = out & 1;
-  flag_n = flag_h = 0;
-  flag_z = (out == 0);
+  setCY(out & 1);
+  setN(0);
+  setH(0);
+  setZ((out == 0));
   return out;
 }
 uint8_t CPU::alu_rl(uint8_t in) {
-  uint8_t out = (in << 1) | flag_cy;
-  flag_cy = select_bits(in, 7, 7);
-  flag_z = (out == 0);
-  flag_h = flag_n = 0;
+  uint8_t out = (in << 1) | CY();
+  setCY(select_bits(in, 7, 7));
+  setZ((out == 0));
+  setH(0);
+  setN(0);
   return out;
 }
 
 uint8_t CPU::alu_sla(uint8_t in) {
   uint8_t out = in << 1;
-  flag_cy = select_bits(in, 7, 7);
-  flag_z = (out == 0);
-  flag_h = flag_n = 0;
+  setCY(select_bits(in, 7, 7));
+  setZ(out == 0);
+  setH(0);
+  setN(0);
   return out;
 }
 uint8_t CPU::alu_sra(uint8_t in) {
   uint8_t out = (in >>1) | (in & (1<<7));
-  flag_cy = in & 1;
-  flag_z = (out == 0);
-  flag_h = flag_n = 0;
+  setCY(in & 1);
+  setZ(out == 0);
+  setH(0);
+  setN(0);
   return out;
 }
 uint8_t CPU::alu_srl(uint8_t in) {
   uint8_t out = in >> 1;
-  flag_cy = in & 1;
-  flag_z = (out == 0);
-  flag_h = flag_n = 0;
+  setCY(in & 1);
+  setZ(out == 0);
+  setH(0);
+  setN(0);
   return out;
 }
 
 uint8_t CPU::alu_swap(uint8_t in) {
   uint8_t out = select_bits(in, 7, 4) | (select_bits(in, 3, 0) << 4);
-  flag_z = (out == 0);
-  flag_cy = flag_h = flag_n = 0;
+  setZ(out == 0);
+  setCY(0);
+  setH(0);
+  setN(0);
   return out;
 }
 
@@ -645,9 +673,9 @@ void CPU::alu_bit(uint8_t in, uint8_t bit) {
     printf("bad bit(bit): %d\n", bit);
     exit(-1);
   }
-  flag_z = !(in & (1<<bit));
-  flag_n = 0;
-  flag_h = 1;
+  setZ(!(in & (1<<bit)));
+  setN(0);
+  setH(1);
 
 }
 uint8_t CPU::alu_set(uint8_t in, uint8_t bit) {
@@ -668,13 +696,13 @@ uint8_t CPU::alu_res(uint8_t in, uint8_t bit) {
 bool CPU::jpcc(uint8_t cond) {
   switch(cond) {
     case 0://NZ
-      return flag_z == 0;
+      return Z() == 0;
     case 1://z
-      return flag_z == 1;
+      return Z() == 1;
     case 2://nc
-      return flag_cy == 0;
+      return CY() == 0;
     case 3://c:
-      return flag_cy == 1;
+      return CY() == 1;
     default:printf("bad cond in jpcc: %d\n", cond);
             exit(-1);
   }
