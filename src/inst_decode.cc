@@ -52,6 +52,17 @@ bool is_reg(uint8_t code) {
 void showOperation(Instruction::Operation op) {
   puts(OperationStrings[op]);
 }
+uint8_t getCycles(Instruction::Operation op, bool didJump) {
+  if(!didJump) {
+    if(op == Instruction::OP_RETCC) return 2;
+    else if(op == Instruction::OP_CALLCC) return 3;
+    else if(op == Instruction::OP_JRCC) return 2;
+    else if(op == Instruction::OP_JPCC) return 3;
+    else return TimingInfo[op];
+  } else {
+    return TimingInfo[op];
+  }
+}
 
 void decode_instruction(const RomViewBase &rom, Instruction *decoded) {
   uint8_t byte = rom[0];

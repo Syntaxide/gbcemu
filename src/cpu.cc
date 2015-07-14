@@ -141,9 +141,10 @@ uint16_t CPU::readQQPair(uint8_t code) const {
 }
 
 void CPU::execute(const Instruction& instr) {
-  execute2(instr);
+  bool didJump = true;
+  execute2(instr, &didJump);
 }
-void CPU::execute2(const Instruction& instr) {
+void CPU::execute2(const Instruction& instr, bool *didJump) {
   switch(instr.operation) {
     case Instruction::OP_LDRR:
       *reg(instr.op1) = *reg(instr.op2);
@@ -530,6 +531,7 @@ void CPU::execute2(const Instruction& instr) {
      printf("instruction not yet supported: %s\n", OperationStrings[instr.operation]);
   } 
 
+  *didJump = false;
   pc += instr.bytes_used;
 }
 

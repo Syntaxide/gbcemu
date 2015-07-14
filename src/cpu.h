@@ -119,7 +119,7 @@ private:
      core of execution. there are some things
      that must be done for each instruction, so these are wrapped in execute()
     */
-  void execute2(const Instruction &instr);
+  void execute2(const Instruction &instr, bool *didJump);
   // takes a reg code, returns a reference to the member.
   // useful so that reg(0b111) = a;
   uint8_t *reg(uint8_t code);
