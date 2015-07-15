@@ -5,10 +5,10 @@
 #include "inst_decode.h"
 #include "rom.h"
 
-CPU::CPU() {
+CPU::CPU() : io(&mem) {
   reset();
 }
-CPU::CPU(Rom &rom) {
+CPU::CPU(Rom &rom) : io(&mem) {
   this->mRom = &rom;
   reset();
 }
@@ -832,6 +832,8 @@ bool CPU::step() {
     exit(-1);
   }
   execute(instr);
+  if(!io.update())
+    return false;
   return mode == RUN;
 
 

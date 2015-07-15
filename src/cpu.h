@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include "io.h"
 #include "inst_decode.h"
 #include "rom.h"
 #include "memory.h"
@@ -99,6 +100,7 @@ public:
   void daa();
   void call(uint16_t dest);
   void ret();
+  IO io;
   Memory mem;
   // get value of pairs
   uint16_t BC() const;

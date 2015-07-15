@@ -1,5 +1,5 @@
 all:
-	g++ main.cc disas.cc memory.cc rom.cc inst_decode.cc cpu.cc -g --std=c++11 -o emu
+	g++ io.cc main.cc disas.cc memory.cc rom.cc inst_decode.cc cpu.cc -g -lSDL2 --std=c++11 -o emu
 
 test_decoder :
 	g++ inst_decode_test.cc inst_decode.cc -g --std=c++11

@@ -1,5 +1,6 @@
 #include "cpu.h"
 #include "rom.h"
+#include <unistd.h>
 
 int main(int argc, char **argv) {
   if(argc != 2) {
@@ -11,6 +12,7 @@ int main(int argc, char **argv) {
     CPU cpu(bios);
 
     while(cpu.step()) {
+      sleep(1);
     }
     return 0;
   }
