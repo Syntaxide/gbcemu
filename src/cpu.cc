@@ -834,9 +834,7 @@ bool CPU::step() {
   execute(instr);
   if(!io.update())
     return false;
+  io.drawAll();
   return mode == RUN;
-
-
-
 }
 

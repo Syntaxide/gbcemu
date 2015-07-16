@@ -9,18 +9,37 @@ IO::IO(Memory *memory) {
     exit(-1);
   }
 
-  SDL_CreateWindow("gbcemu - alex midlash",
-                   SDL_WINDOWPOS_CENTERED,
-                   SDL_WINDOWPOS_CENTERED,
-                   160, 144,
-                   0);
+  window = SDL_CreateWindow("gbcemu - alex midlash",
+                            SDL_WINDOWPOS_CENTERED,
+                            SDL_WINDOWPOS_CENTERED,
+                            256, 256,
+                            0);
+  renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 }
 
 IO::~IO() {
   SDL_Quit();
 }
 
+const uint16_t VBK_REG = 0xFF4F;
+
 void IO::drawAll() {
+  SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+  SDL_RenderClear(renderer);
+  SDL_RenderPresent(renderer);
+
+  if(memory->read8(VBK_REG) & 1) {
+    drawBank1();
+  } else {
+    drawBank0();
+  }
+}
+
+void IO::drawBank0() {
+  puts("drawBank0 called");
+}
+void IO::drawBank1() {
+  puts("drawBank1 called");
 }
 
 // return whether or not the app should continue
