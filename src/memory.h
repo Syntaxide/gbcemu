@@ -2,6 +2,10 @@
 #include <stdint.h>
 
 enum mem_regs {
+  BG_START = 0x9800,
+  BG_END = 0x9fff,
+  BG_ATTR_START = 0x9c00,
+  BG_ATTR_END = 0x9fff,
   P1 = 0xff00,
   SB = 0xFF01,
     SC = 0xFF02,

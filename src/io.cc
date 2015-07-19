@@ -1,4 +1,5 @@
 #include "io.h"
+#include "util.h"
 #include "SDL2/SDL.h"
 
 const int CBANK_0X = 0;
@@ -73,7 +74,8 @@ void IO::drawAll() {
   if(debug_mode) {
     drawBank0();
     drawBank1();
-    drawScene();
+    drawBackground();
+    drawForeground();
   } else {
     if(memory->read8(VBK_REG) & 1) {
       drawBank1();
@@ -84,7 +86,7 @@ void IO::drawAll() {
   SDL_RenderPresent(renderer);
 }
 
-void IO::drawScene() {
+void IO::drawForeground() {
   int startx = 256;
   int starty = 0;
   for(int entry=0;entry<40;entry++) {
@@ -100,16 +102,38 @@ void IO::drawScene() {
       printf("invisible oam: %d\n", entry);
     }
   }
-   
 }
 
-void IO::drawTile(int tilenum, int x, int y) {
+void IO::drawBackground() {
+  int startx = 256;
+  int starty = 0;
+  for(uint16_t addr=0;addr+BG_START <= BG_END;addr ++) {
+    uint8_t tile = memory->read8(BG_START+addr);
+    uint8_t attr = memory->read8(addr + 0x9c00);
+    drawTile(tile,
+             startx + (addr%32)*8,
+             (addr/32)*8,
+             select_bits(attr, 3, 3)!=0); 
+
+  }
+}
+
+
+
+void IO::drawTile(uint8_t tilenum, int x, int y, bool upperBank) {
   static const uint8_t colors[] = {
-    0, 0, 255, 255,
-    0, 255, 0, 255,
-    0, 255, 255, 255,
-    255,255,0, 255};
+    255, 255, 255, 255,
+    200, 200, 200, 255,
+    100, 100, 100, 255,
+    0, 0, 0, 255};
   uint16_t address = 0x8000 + tilenum*16;
+  if(upperBank) {
+    int8_t tile2 = tilenum;
+    address = 0x9000 + 16*(tilenum);
+    printf("upper bank: tile=%x tilenum, addr = %x\n",
+           tilenum,
+           address);
+  }
   for(int i=0;i<16;i+=2) {
     uint8_t lower = memory->read8(address+i);
     uint8_t upper = memory->read8(address+1+i);

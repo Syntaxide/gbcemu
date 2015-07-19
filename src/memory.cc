@@ -25,6 +25,14 @@ void loadVRam(uint8_t *start) {
   slurp("oam.bin", &data, &size);
   memcpy(start+OAM_START, data, size);
   free(data);
+
+  slurp("bgmap.bin", &data, &size);
+  memcpy(start+BG_START, data, size);
+  free(data);
+
+  slurp("bgattr.bin", &data, &size);
+  memcpy(start+BG_ATTR_START, data, size);
+  free(data);
 }
 
 void Memory::init() {

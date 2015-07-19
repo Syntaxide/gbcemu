@@ -25,8 +25,9 @@ class IO {
     bool update();
     void addTimeManager(TimeManager *time);
   private:
-    void drawTile(int tilenum, int x, int y);
-    void drawScene();
+    void drawTile(uint8_t tilenum, int x, int y, bool upperBank=false);
+    void drawForeground();
+    void drawBackground();
     void drawBank0();
     void drawBank1();
     Memory *memory;
