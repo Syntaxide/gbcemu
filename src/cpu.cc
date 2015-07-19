@@ -148,6 +148,7 @@ uint16_t CPU::readQQPair(uint8_t code) const {
 }
 
 void CPU::execute(const Instruction& instr) {
+  /*
   bool didJump = true;
   execute2(instr, &didJump);
   prevOperation = instr.operation;
@@ -156,7 +157,8 @@ void CPU::execute(const Instruction& instr) {
   if(time.shouldDraw()) {
     io.drawAll();
     time.reset();
-  }
+  }*/
+  io.drawAll();
 }
 void CPU::execute2(const Instruction& instr, bool *didJump) {
   switch(instr.operation) {
@@ -515,7 +517,7 @@ void CPU::execute2(const Instruction& instr, bool *didJump) {
       }
       break;
     case Instruction::OP_RETI:
-      ret(); //TODO: restore interupt enable flag
+      ret(); 
       break;
     case Instruction::OP_RET:
       ret();
@@ -544,14 +546,28 @@ void CPU::execute2(const Instruction& instr, bool *didJump) {
     case Instruction::OP_STOP:
       mode = STOP;
       break;
+    case Instruction::OP_DI:
+      di();
+      break;
+    case Instruction::OP_EI:
+      ei();
+      break;
     default:
      printf("instruction not yet supported: %s\n", OperationStrings[instr.operation]);
+     exit(-1);
   } 
 
   *didJump = false;
   pc += instr.bytes_used;
 }
 
+void CPU::di() {
+  ime = false;
+}
+
+void CPU::ei() {
+  ime = true;
+}
 uint8_t CPU::alu_add8(uint8_t first, uint8_t second, uint8_t c) {
   uint8_t sum = first + second + c;
   setH(((first&0xf0) + (second&0xf0)) != (sum&0xf0));  //carry from lower nibble

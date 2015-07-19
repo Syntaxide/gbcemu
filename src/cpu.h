@@ -66,6 +66,8 @@ public:
   void setH(bool v);
   void setN(bool v);
   void setCY(bool v);
+  void di();
+  void ei();
   uint16_t pc, sp;
 
   // sets carry flags appropriately

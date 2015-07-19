@@ -26,6 +26,7 @@ class IO {
     void addTimeManager(TimeManager *time);
   private:
     void drawTile(int tilenum, int x, int y);
+    void drawScene();
     void drawBank0();
     void drawBank1();
     Memory *memory;
