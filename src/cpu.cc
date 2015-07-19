@@ -7,13 +7,16 @@
 
 CPU::CPU() : io(&mem) {
   reset();
+  io.addTimeManager(&time);
 }
 CPU::CPU(Rom &rom) : io(&mem) {
   this->mRom = &rom;
   reset();
+  io.addTimeManager(&time);
 }
 
 void CPU::reset() {
+  doublespeed = false;
   mode = RUN;
   pc = 0x100;
   setAF(0x01b0);
@@ -148,6 +151,12 @@ void CPU::execute(const Instruction& instr) {
   bool didJump = true;
   execute2(instr, &didJump);
   prevOperation = instr.operation;
+
+  time.addCycles(doublespeed, getCycles(instr.operation, didJump));
+  if(time.shouldDraw()) {
+    io.drawAll();
+    time.reset();
+  }
 }
 void CPU::execute2(const Instruction& instr, bool *didJump) {
   switch(instr.operation) {
@@ -831,10 +840,9 @@ bool CPU::step() {
     puts("exiting due to bad instruction");
     exit(-1);
   }
-  execute(instr);
   if(!io.update())
     return false;
-  io.drawAll();
+  execute(instr);
   return mode == RUN;
 }
 

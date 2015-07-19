@@ -46,11 +46,6 @@ enum reg_addrs {
   reg_ocpd = 0xff6b
 };
 
-enum CPU_Speed {
-  SPEED_NORMAL = 0, //1.05 Mhz
-  SPEED_DOUBLE, //2.10 Mhz
-};
-
 class CPU {
 public:
   CPU();
@@ -129,8 +124,9 @@ private:
   uint8_t *reg(uint8_t code);
 
   Rom *mRom;
-  CPU_Speed speed;
+  bool doublespeed;
   Instruction instruction;
+  TimeManager time;
   enum Mode {
     RUN = 0,
     HALT,

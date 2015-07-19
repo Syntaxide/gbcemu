@@ -1,7 +1,36 @@
 #include "io.h"
 #include "SDL2/SDL.h"
 
+char select_bit(uint8_t val, uint8_t bit) {
+  return (val & (1<<bit)) >> bit;
+}
+void TimeManager::addCycles(bool doublespeed, uint8_t cycles) {
+  if(doublespeed)
+    ticks += cycles;
+  else
+    ticks += cycles*2;
+}
+bool TimeManager::shouldDraw() {
+  return ticks > 32886;
+}
+
+void TimeManager::reset() {
+  ticks = 0;
+  uint32_t now = SDL_GetTicks();
+  uint32_t delta = now - last_draw;
+  if(delta > 15) {
+    printf("emulator running behind. delta=%d\n", delta);
+  } else {
+    last_idle = 15 - delta;
+    printf("sleeping for %dms\n", last_idle);
+    SDL_Delay(last_idle);
+
+  }
+  last_draw = now;
+}
+
 IO::IO(Memory *memory) {
+  this->time = nullptr;
   this->memory = memory;
   SDL_SetMainReady();
   if(SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -23,20 +52,55 @@ IO::~IO() {
 
 const uint16_t VBK_REG = 0xFF4F;
 
+void IO::addTimeManager(TimeManager *time) {
+  this->time = time;
+}
 void IO::drawAll() {
-  SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+  if(time) {
+    sprintf(title, "gbcemu - idle:(%d/16) - alex midlash", time->last_idle);
+    SDL_SetWindowTitle(window, title);
+  }
+  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
   SDL_RenderClear(renderer);
-  SDL_RenderPresent(renderer);
 
   if(memory->read8(VBK_REG) & 1) {
     drawBank1();
   } else {
     drawBank0();
   }
+  SDL_RenderPresent(renderer);
 }
 
+void IO::drawTile(int tilenum, int x, int y) {
+  static const uint8_t colors[] = {
+    255, 0, 0, 255,
+    0, 255, 0, 255,
+    0, 0, 255, 255,
+    255,255,0, 255};
+  uint16_t address = 0x8000 + tilenum*16;
+  for(int i=0;i<16;i+=2) {
+    uint8_t lower = memory->read8(address+i);
+    uint8_t upper = memory->read8(address+1+i);
+    for(int xi=0;xi<8;xi++) {
+      uint8_t val = select_bit(lower, 7-xi) + (select_bit(upper, 7-xi)<<1);
+      printf("tile %d at (%d,%d)=%d\n", 
+             tilenum,
+             xi,i/2,
+             val);
+      SDL_SetRenderDrawColor(renderer,
+                             colors[val*4], 
+                             colors[val*4+1], 
+                             colors[val*4+2],
+                             colors[val*4+3]);
+      SDL_RenderDrawPoint(renderer, x+xi, y+(i/2));
+    }
+  }
+}
 void IO::drawBank0() {
   puts("drawBank0 called");
+  for(int tile=0;tile<192;tile++) {
+    drawTile(tile, 8*(tile%8), (tile/8)*8);
+  }
 }
 void IO::drawBank1() {
   puts("drawBank1 called");

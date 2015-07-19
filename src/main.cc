@@ -11,8 +11,7 @@ int main(int argc, char **argv) {
     Rom bios(argv[1]);
     CPU cpu(bios);
 
-    while(cpu.step()) {
-      sleep(1);
+    for(bool run=true;run;run = cpu.step()) {
     }
     return 0;
   }
